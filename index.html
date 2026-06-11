@@ -80,12 +80,6 @@ header{
 }
 .banner.show{display:block}
 .banner b{font-weight:700}
-.room-info{
-  font-family:'Mali',cursive;font-size:.8rem;color:var(--ink-soft);
-  text-align:center;padding:.4rem 1rem;
-  border-bottom:1.5px dashed var(--line);
-  background:rgba(255,255,255,.55);
-}
 
 /* ---------- Tabs ---------- */
 main{flex:1;width:100%;max-width:860px;margin:0 auto;padding:1rem 1rem 6rem}
@@ -313,7 +307,6 @@ dialog .field{margin-bottom:.7rem}
   ⚠️ <b>ยังไม่ได้ตั้งค่า Firebase</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เครื่องเดียว ยังไม่ sync กับแฟน
   ให้วาง firebaseConfig ในไฟล์ index.html ตามคู่มือก่อนนะ
 </div>
-<div class="room-info" id="roomInfo" style="display:none"></div>
 
 <nav class="tabs" role="tablist">
   <button class="active" data-page="draw" role="tab"><span class="ico">🎨</span>วาดรูป</button>
@@ -1102,16 +1095,7 @@ function startWatching(){
   unsubs.push(dbApi.watchSettings(pairCode, s => {
     annivDate = (s && s.anniv) || "";
     renderAnniv();
-    renderRoom(s && s.members);
   }));
-}
-/* แถบสมาชิกในห้อง */
-function renderRoom(members){
-  const el = $("#roomInfo");
-  const names = Object.values(members || {});
-  if(!names.length){ el.style.display = "none"; return; }
-  el.style.display = "";
-  el.textContent = `👥 ${names.join(" 💕 ")}`;
 }
 
 if(needPairing()){
