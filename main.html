@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>สมุดของเรา 💌</title>
+<meta name="description" content="สมุดวาดรูปและปฏิทินของเราสองคน sync กันแบบ real-time">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💌</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFF7F2;
+  --card:#FFFFFF;
+  --ink:#43395B;
+  --ink-soft:#8B82A3;
+  --berry:#FF5C8A;
+  --berry-deep:#E8447A;
+  --mint:#2EC4B6;
+  --sun:#FFB627;
+  --line:rgba(67,57,91,.13);
+  --shadow:0 4px 14px rgba(67,57,91,.10);
+  --radius:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'IBM Plex Sans Thai',sans-serif;
+  color:var(--ink);
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:28px 28px;
+  display:flex;flex-direction:column;
+}
+h1,h2,h3,.mali{font-family:'Mali',cursive}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:1rem;color:var(--ink)}
+
+/* ---------- Header ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(255,247,242,.92);backdrop-filter:blur(8px);
+  border-bottom:2px dashed var(--line);
+  padding:.7rem 1rem;
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+}
+.brand{display:flex;align-items:center;gap:.5rem;min-width:0}
+.brand h1{font-size:1.2rem;font-weight:700;white-space:nowrap}
+.brand .heart{display:inline-block;animation:beat 1.6s ease-in-out infinite;transform-origin:center}
+@keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.25)}24%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.brand .heart{animation:none}}
+.head-right{display:flex;align-items:center;gap:.45rem}
+.sync-dot{
+  width:9px;height:9px;border-radius:50%;background:#C7C2D6;flex:0 0 auto;
+}
+.sync-dot.on{background:var(--mint);box-shadow:0 0 0 3px rgba(46,196,182,.25)}
+.sync-dot.off{background:var(--sun)}
+.days-pill{
+  font-family:'Mali',cursive;font-size:.82rem;font-weight:600;
+  background:var(--berry);color:#fff;border-radius:999px;
+  padding:.35rem .8rem;box-shadow:var(--shadow);white-space:nowrap;
+}
+.days-pill.unset{background:#fff;color:var(--ink-soft);border:1.5px dashed var(--ink-soft)}
+
+/* ---------- Setup banner ---------- */
+.banner{
+  background:#FFF3D6;border-bottom:1.5px solid #F3DFA8;
+  padding:.55rem 1rem;font-size:.8rem;line-height:1.5;color:#7A5C00;
+  display:none;
+}
+.banner.show{display:block}
+.banner b{font-weight:700}
+
+/* ---------- Tabs ---------- */
+main{flex:1;width:100%;max-width:860px;margin:0 auto;padding:1rem 1rem 6rem}
+nav.tabs{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  background:#fff;border-top:1.5px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:.4rem .4rem calc(.4rem + env(safe-area-inset-bottom));
+}
+nav.tabs button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:.4rem 0;border-radius:14px;color:var(--ink-soft);
+  font-size:.72rem;font-weight:500;transition:background .15s,color .15s;
+}
+nav.tabs button .ico{font-size:1.35rem;line-height:1}
+nav.tabs button.active{color:var(--berry-deep);background:#FFEDF3}
+section.page{display:none;animation:fadein .25s ease}
+section.page.show{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- Cards & washi tape ---------- */
+.card{
+  position:relative;background:var(--card);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:1.1rem;margin-bottom:1.2rem;
+}
+.card.taped::before{
+  content:"";position:absolute;top:-11px;left:50%;
+  width:96px;height:24px;transform:translateX(-50%) rotate(-2deg);
+  background:repeating-linear-gradient(45deg,#FFD3E0 0 8px,#FFC1D4 8px 16px);
+  opacity:.9;border-radius:2px;
+  box-shadow:0 1px 2px rgba(67,57,91,.15);
+}
+.card.taped.mint::before{background:repeating-linear-gradient(45deg,#C9F2EE 0 8px,#B2EAE4 8px 16px)}
+.card.taped.sun::before{background:repeating-linear-gradient(45deg,#FFE9BF 0 8px,#FFE0A3 8px 16px)}
+.card h2{font-size:1.15rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.hint{font-size:.82rem;color:var(--ink-soft);line-height:1.5}
+
+/* ---------- Drawing ---------- */
+.canvas-wrap{
+  position:relative;border-radius:14px;overflow:hidden;
+  border:1.5px solid var(--line);background:#fff;
+  touch-action:none;
+}
+#board{display:block;width:100%;height:auto;cursor:crosshair}
+.toolbar{display:flex;flex-wrap:wrap;gap:.55rem;align-items:center;margin-top:.85rem}
+.swatches{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+.swatch{
+  width:30px;height:30px;border-radius:50%;
+  border:2.5px solid #fff;box-shadow:0 0 0 1.5px var(--line);
+  transition:transform .12s;
+}
+.swatch.active{transform:scale(1.22);box-shadow:0 0 0 2.5px var(--berry)}
+input[type=color]{width:30px;height:30px;border-radius:50%;border:none;padding:0;background:none;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px var(--line)}
+.size-wrap{display:flex;align-items:center;gap:.4rem;flex:1;min-width:140px}
+input[type=range]{flex:1;accent-color:var(--berry)}
+.dot-preview{width:26px;height:26px;display:grid;place-items:center}
+.dot-preview span{background:var(--ink);border-radius:50%;display:block}
+.tool-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.85rem}
+.btn{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.55rem .95rem;border-radius:999px;
+  font-size:.88rem;font-weight:600;
+  background:#F4F0FA;color:var(--ink);
+  transition:transform .1s, filter .15s;
+}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--berry);color:#fff;box-shadow:0 3px 0 var(--berry-deep)}
+.btn.mint{background:var(--mint);color:#fff;box-shadow:0 3px 0 #22A096}
+.btn.ghost{background:#fff;border:1.5px solid var(--line)}
+.btn.danger{background:#FFE9EC;color:#D6336C}
+.btn.eraser-on{background:var(--ink);color:#fff}
+
+/* ---------- Gallery ---------- */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.8rem}
+.shot{
+  background:#fff;border-radius:12px;box-shadow:var(--shadow);
+  padding:.5rem .5rem .4rem;position:relative;
+  transform:rotate(var(--tilt,0deg));
+}
+.shot img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;background:#fff}
+.shot .meta{font-family:'Mali',cursive;font-size:.72rem;color:var(--ink-soft);margin-top:.35rem;display:flex;justify-content:space-between;align-items:center;gap:.3rem}
+.shot .meta .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shot .meta button{font-size:.95rem;flex:0 0 auto}
+.empty{
+  text-align:center;color:var(--ink-soft);
+  border:2px dashed var(--line);border-radius:var(--radius);
+  padding:1.6rem 1rem;font-size:.9rem;line-height:1.6;
+}
+
+/* ---------- Schedule ---------- */
+.form-grid{display:grid;grid-template-columns:1fr;gap:.6rem}
+.form-grid .row{display:flex;gap:.6rem}
+.field{flex:1;display:flex;flex-direction:column;gap:.25rem}
+.field label{font-size:.78rem;font-weight:600;color:var(--ink-soft)}
+.field input,.field select{
+  padding:.6rem .75rem;border:1.5px solid var(--line);border-radius:12px;
+  background:#fff;outline:none;width:100%;
+}
+.field input:focus,.field select:focus{border-color:var(--berry)}
+.event{
+  display:flex;align-items:center;gap:.8rem;
+  background:#fff;border-radius:14px;box-shadow:var(--shadow);
+  padding:.75rem .9rem;margin-bottom:.7rem;
+  border-left:5px solid var(--mint);
+}
+.event.today{border-left-color:var(--berry)}
+.event.past{opacity:.45;border-left-color:var(--ink-soft)}
+.event .emoji{font-size:1.6rem}
+.event .info{flex:1;min-width:0}
+.event .info .title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event .info .when{font-size:.78rem;color:var(--ink-soft)}
+.event .count{
+  font-family:'Mali',cursive;font-weight:700;font-size:.82rem;
+  color:var(--berry-deep);white-space:nowrap;text-align:right;
+}
+.event .del{color:var(--ink-soft);font-size:1rem;padding:.2rem}
+
+/* ---------- Notes ---------- */
+.note-form{display:flex;flex-direction:column;gap:.6rem}
+.note-form textarea{
+  border:1.5px solid var(--line);border-radius:12px;padding:.7rem .8rem;
+  min-height:74px;resize:vertical;outline:none;background:#fff;
+}
+.note-form textarea:focus{border-color:var(--berry)}
+.notes-list{display:grid;grid-template-columns:1fr;gap:.7rem}
+.note{
+  background:#FFFBEA;border-radius:4px 18px 18px 18px;
+  box-shadow:var(--shadow);padding:.8rem .95rem;
+  position:relative;transform:rotate(var(--tilt,0deg));
+}
+.note.them{background:#EAFBF8;border-radius:18px 4px 18px 18px}
+.note p{font-family:'Mali',cursive;font-size:1rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.note .meta{display:flex;justify-content:space-between;margin-top:.45rem;font-size:.72rem;color:var(--ink-soft)}
+.note .meta button{font-size:.9rem}
+
+/* ---------- Dialogs ---------- */
+dialog{
+  border:none;border-radius:var(--radius);box-shadow:0 10px 40px rgba(67,57,91,.25);
+  padding:1.3rem;max-width:360px;width:calc(100% - 2.5rem);
+  font-family:'IBM Plex Sans Thai',sans-serif;color:var(--ink);
+}
+dialog::backdrop{background:rgba(67,57,91,.45);backdrop-filter:blur(3px)}
+dialog h3{font-size:1.1rem;margin-bottom:.4rem}
+dialog .sub{font-size:.82rem;color:var(--ink-soft);line-height:1.55;margin-bottom:.9rem}
+dialog .field{margin-bottom:.7rem}
+.toast{
+  position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:.6rem 1.1rem;border-radius:999px;
+  font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;
+  max-width:88%;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- Desktop ---------- */
+@media (min-width:720px){
+  main{padding-bottom:2rem;padding-top:1.4rem}
+  nav.tabs{
+    position:static;border:none;background:none;
+    max-width:860px;margin:0 auto;padding:.8rem 1rem 0;gap:.6rem;justify-content:flex-start;
+  }
+  nav.tabs button{
+    flex:0 0 auto;flex-direction:row;gap:.45rem;
+    padding:.55rem 1.1rem;font-size:.9rem;background:#fff;
+    border:1.5px solid var(--line);border-radius:999px;
+  }
+  nav.tabs button.active{background:var(--berry);color:#fff;border-color:var(--berry)}
+  .gallery{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .form-grid{grid-template-columns:2fr 1fr 1fr auto;align-items:end}
+  .form-grid .row{display:contents}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="heart">💌</span><h1>สมุดของเรา</h1></div>
+  <div class="head-right">
+    <span class="sync-dot" id="syncDot" title="สถานะการเชื่อมต่อ"></span>
+    <button class="days-pill unset" id="daysPill">ตั้งวันครบรอบ ✎</button>
+  </div>
+</header>
+
+<div class="banner" id="setupBanner">
+  ⚠️ <b>ยังไม่ได้ตั้งค่า Firebase</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เครื่องเดียว ยังไม่ sync กับแฟน
+  ให้วาง firebaseConfig ในไฟล์ index.html ตามคู่มือก่อนนะ
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="active" data-page="draw" role="tab"><span class="ico">🎨</span>วาดรูป</button>
+  <button data-page="gallery" role="tab"><span class="ico">🖼️</span>แกลเลอรี</button>
+  <button data-page="schedule" role="tab"><span class="ico">📅</span>ปฏิทินคู่</button>
+  <button data-page="notes" role="tab"><span class="ico">💌</span>โน้ตรัก</button>
+</nav>
+
+<main>
+
+  <!-- ============ วาดรูป ============ -->
+  <section class="page show" id="page-draw">
+    <div class="card taped">
+      <h2>🎨 วาดรูปให้กัน</h2>
+      <div class="canvas-wrap"><canvas id="board"></canvas></div>
+
+      <div class="toolbar">
+        <div class="swatches" id="swatches"></div>
+        <input type="color" id="customColor" value="#43395B" title="เลือกสีเอง">
+        <div class="size-wrap">
+          <input type="range" id="size" min="2" max="40" value="6" aria-label="ขนาดหัวปากกา">
+          <div class="dot-preview"><span id="dotPrev" style="width:6px;height:6px"></span></div>
+        </div>
+      </div>
+
+      <div class="tool-row">
+        <button class="btn ghost" id="eraserBtn">🧽 ยางลบ</button>
+        <button class="btn ghost" id="undoBtn">↩️ ย้อน</button>
+        <button class="btn danger" id="clearBtn">🗑️ ล้าง</button>
+      </div>
+      <div class="tool-row">
+        <button class="btn primary" id="saveBtn">💞 ส่งเข้าแกลเลอรีของเรา</button>
+        <button class="btn mint" id="shareBtn">📤 แชร์</button>
+        <button class="btn ghost" id="downloadBtn">⬇️ โหลด</button>
+      </div>
+      <p class="hint" style="margin-top:.7rem" id="drawHint">รูปที่ส่งเข้าแกลเลอรี แฟนจะเห็นบนเครื่องเขาทันที 💕</p>
+    </div>
+  </section>
+
+  <!-- ============ แกลเลอรี ============ -->
+  <section class="page" id="page-gallery">
+    <div class="card taped mint">
+      <h2>🖼️ แกลเลอรีของเรา</h2>
+      <div class="gallery" id="gallery"></div>
+      <div class="empty" id="galleryEmpty">ยังไม่มีรูปเลย~<br>ไปวาดรูปแรกให้เขากันเถอะ 🥰</div>
+    </div>
+  </section>
+
+  <!-- ============ ปฏิทินคู่ ============ -->
+  <section class="page" id="page-schedule">
+    <div class="card taped sun">
+      <h2>📅 นัดของเราสองคน</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label for="evTitle">จะไปทำอะไรกัน</label>
+          <input id="evTitle" placeholder="เช่น ไปดูหนัง, เดทคาเฟ่ 🍰" maxlength="60">
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="evDate">วันที่</label>
+            <input id="evDate" type="date">
+          </div>
+          <div class="field">
+            <label for="evEmoji">อีโมจิ</label>
+            <select id="evEmoji">
+              <option>💖</option><option>🍿</option><option>🍰</option><option>✈️</option>
+              <option>🏖️</option><option>🎂</option><option>🎁</option><option>🍜</option>
+              <option>🎡</option><option>📸</option><option>🐶</option><option>⭐</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn primary" id="addEvent" style="justify-content:center">เพิ่มนัด ➕</button>
+      </div>
+    </div>
+    <div id="eventList"></div>
+    <div class="empty" id="eventEmpty">ยังไม่มีนัดเลย~ ลองชวนเขาไปเที่ยวสักที่สิ ✈️</div>
+  </section>
+
+  <!-- ============ โน้ตรัก ============ -->
+  <section class="page" id="page-notes">
+    <div class="card taped">
+      <h2>💌 โน้ตรักถึงกัน</h2>
+      <div class="note-form">
+        <textarea id="noteText" placeholder="เขียนอะไรน่ารักๆ ถึงเขาหน่อย..." maxlength="300"></textarea>
+        <button class="btn primary" id="addNote" style="justify-content:center">แปะโน้ต 📌</button>
+      </div>
+    </div>
+    <div class="notes-list" id="notesList"></div>
+    <div class="empty" id="notesEmpty">ยังไม่มีโน้ตเลย~ เขียนข้อความแรกถึงเขาเลย ✍️</div>
+  </section>
+
+</main>
+
+<!-- Modal จับคู่ -->
+<dialog id="pairDialog">
+  <h3>💑 เชื่อมสมุดของเราสองคน</h3>
+  <p class="sub">
+    ตั้ง <b>รหัสคู่</b> อะไรก็ได้ที่รู้กันแค่สองคน (เช่น <span class="mali">moodeng-fanclub</span>)
+    แล้วให้แฟนเปิดเว็บนี้และใส่รหัสเดียวกันเป๊ะๆ ข้อมูลจะ sync กันทันที ✨
+  </p>
+  <div class="field">
+    <label for="pairCode">รหัสคู่ (ตัวอักษรอังกฤษ/ตัวเลข/ขีด)</label>
+    <input id="pairCode" placeholder="เช่น moodeng-fanclub-99" maxlength="40" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="myName">ชื่อเล่นของเรา (ไว้โชว์ว่าใครวาด/ใครเขียน)</label>
+    <input id="myName" placeholder="เช่น มะลิ 🐰" maxlength="20">
+  </div>
+  <div class="tool-row" style="margin-top:.4rem">
+    <button class="btn primary" id="pairSave" style="flex:1;justify-content:center">เริ่มใช้เลย 💕</button>
+  </div>
+</dialog>
+
+<!-- Modal ครบรอบ -->
+<dialog id="annivDialog">
+  <h3>💞 เราคบกันวันไหนนะ?</h3>
+  <div class="field"><input type="date" id="annivInput"></div>
+  <div class="tool-row" style="margin-top:.9rem">
+    <button class="btn primary" id="annivSave" style="flex:1;justify-content:center">บันทึก</button>
+    <button class="btn ghost" id="annivCancel">ปิด</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+/* ════════════════════════════════════════════════════════════════
+   ★★★ ขั้นตอนตั้งค่า: วาง firebaseConfig ของคุณตรงนี้ ★★★
+   ได้มาจาก Firebase Console → Project settings → Your apps → Web app
+   ════════════════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE.appspot.com",
+  messagingSenderId: "0000000000",
+  appId: "PASTE_APP_ID"
+};
+/* ════════════════════════════════════════════════════════════════ */
+
+const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
+
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, fb){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }catch(e){ return fb; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+const toastEl = $("#toast");
+let toastTimer;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 2400);
+}
+function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+
+/* ---------- Firebase init ---------- */
+let dbApi = null; // abstraction layer
+const syncDot = $("#syncDot");
+
+if (FIREBASE_READY) {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  const fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+  const app = initializeApp(firebaseConfig);
+  const db = fs.getFirestore(app);
+
+  dbApi = {
+    mode: "firebase",
+    coupleRef(code){ return fs.doc(db, "couples", code); },
+    col(code, name){ return fs.collection(db, "couples", code, name); },
+    watch(code, name, cb){
+      const q = fs.query(this.col(code, name), fs.orderBy("t", "desc"), fs.limit(120));
+      return fs.onSnapshot(q,
+        snap => { cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setSync(true); },
+        err => { console.error(err); setSync(false); toast("เชื่อมต่อไม่ได้ เช็ค Firestore rules นะ"); }
+      );
+    },
+    async add(code, name, data){
+      await fs.addDoc(this.col(code, name), data);
+    },
+    async del(code, name, id){
+      await fs.deleteDoc(fs.doc(db, "couples", code, name, id));
+    },
+    watchSettings(code, cb){
+      return fs.onSnapshot(this.coupleRef(code), snap => cb(snap.exists() ? snap.data() : {}));
+    },
+    async setSettings(code, data){
+      await fs.setDoc(this.coupleRef(code), data, { merge: true });
+    }
+  };
+} else {
+  $("#setupBanner").classList.add("show");
+  $("#drawHint").textContent = "โหมดออฟไลน์: รูปเก็บในเครื่องนี้ก่อน ตั้งค่า Firebase แล้วจะ sync ได้ 💕";
+  /* fallback: localStorage เลียนแบบ API เดียวกัน */
+  const listeners = {};
+  function emit(name){ (listeners[name]||[]).forEach(cb => cb(store.get("local_"+name, []))); }
+  dbApi = {
+    mode: "local",
+    watch(code, name, cb){
+      (listeners[name] = listeners[name] || []).push(cb);
+      cb(store.get("local_"+name, []));
+      return ()=>{};
+    },
+    async add(code, name, data){
+      const arr = store.get("local_"+name, []);
+      arr.unshift({ id: String(Date.now()), ...data });
+      store.set("local_"+name, arr);
+      emit(name);
+    },
+    async del(code, name, id){
+      store.set("local_"+name, store.get("local_"+name, []).filter(x=>x.id!==id));
+      emit(name);
+    },
+    watchSettings(code, cb){
+      (listeners.__settings = listeners.__settings || []).push(cb);
+      cb(store.get("local_settings", {}));
+      return ()=>{};
+    },
+    async setSettings(code, data){
+      store.set("local_settings", { ...store.get("local_settings", {}), ...data });
+      (listeners.__settings||[]).forEach(cb => cb(store.get("local_settings", {})));
+    }
+  };
+}
+function setSync(on){
+  syncDot.classList.toggle("on", !!on && FIREBASE_READY);
+  syncDot.classList.toggle("off", !on && FIREBASE_READY);
+}
+setSync(false);
+
+/* ---------- Pairing (รหัสคู่ + ชื่อเรา) ---------- */
+let pairCode = store.get("pairCode", "");
+let myName = store.get("myName", "");
+const pairDialog = $("#pairDialog");
+function sanitizeCode(s){
+  return s.toLowerCase().trim().replace(/\s+/g,"-").replace(/[^a-z0-9ก-๙\-_.]/g,"").slice(0,40);
+}
+function needPairing(){
+  return !pairCode || !myName;
+}
+function openPairing(){
+  $("#pairCode").value = pairCode;
+  $("#myName").value = myName;
+  pairDialog.showModal();
+}
+$("#pairSave").addEventListener("click", ()=>{
+  const code = sanitizeCode($("#pairCode").value);
+  const name = $("#myName").value.trim();
+  if(code.length < 4){ toast("รหัสคู่สั้นไปหน่อย เอาอย่างน้อย 4 ตัวนะ"); return; }
+  if(!name){ toast("ใส่ชื่อเล่นด้วยน้า"); return; }
+  pairCode = code; myName = name;
+  store.set("pairCode", code);
+  store.set("myName", name);
+  pairDialog.close();
+  startWatching();
+  toast("เชื่อมสมุดแล้ว 💑 บอกรหัสนี้ให้แฟนด้วยนะ: " + code);
+});
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll("nav.tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll("section.page").forEach(p=>p.classList.remove("show"));
+    btn.classList.add("active");
+    $("#page-"+btn.dataset.page).classList.add("show");
+    if(btn.dataset.page==="draw") resizeCanvas();
+  });
+});
+
+/* ---------- ครบรอบ ---------- */
+const daysPill = $("#daysPill"), annivDialog = $("#annivDialog");
+let annivDate = "";
+function renderAnniv(){
+  if(!annivDate){ daysPill.textContent = "ตั้งวันครบรอบ ✎"; daysPill.classList.add("unset"); return; }
+  const days = Math.floor((startOfDay(new Date()) - startOfDay(new Date(annivDate))) / 864e5) + 1;
+  daysPill.textContent = `คบกันมา ${days.toLocaleString("th-TH")} วัน 💕`;
+  daysPill.classList.remove("unset");
+}
+daysPill.addEventListener("click", ()=>{
+  $("#annivInput").value = annivDate || "";
+  annivDialog.showModal();
+});
+$("#annivSave").addEventListener("click", async ()=>{
+  const v = $("#annivInput").value;
+  if(v){
+    try{ await dbApi.setSettings(pairCode, { anniv: v }); toast("บันทึกแล้ว 💞"); }
+    catch(e){ toast("บันทึกไม่สำเร็จ ลองอีกทีนะ"); }
+  }
+  annivDialog.close();
+});
+$("#annivCancel").addEventListener("click", ()=>annivDialog.close());
+
+/* ---------- Canvas วาดรูป ---------- */
+const canvas = $("#board"), ctx = canvas.getContext("2d");
+const wrap = document.querySelector(".canvas-wrap");
+let drawing = false, erasing = false;
+let color = "#43395B", size = 6;
+let undoStack = [];
+const MAX_UNDO = 25;
+
+const PALETTE = ["#43395B","#FF5C8A","#FF8A5C","#FFB627","#5CC9A7","#2EC4B6","#5C9DFF","#B05CFF","#8B5A3C","#FFFFFF"];
+const swatchesEl = $("#swatches");
+PALETTE.forEach((c,i)=>{
+  const b = document.createElement("button");
+  b.className = "swatch" + (i===0 ? " active" : "");
+  b.style.background = c;
+  b.setAttribute("aria-label","สี "+c);
+  b.addEventListener("click", ()=>{
+    color = c; erasing = false;
+    $("#eraserBtn").classList.remove("eraser-on");
+    document.querySelectorAll(".swatch").forEach(s=>s.classList.remove("active"));
+    b.classList.add("active");
+  });
+  swatchesEl.appendChild(b);
+});
+$("#customColor").addEventListener("input", e=>{
+  color = e.target.value; erasing = false;
+  $("#eraserBtn").classList.remove("eraser-on");
+  document.querySelectorAll(".swatch").forEach(s=>s.classList.remove("active"));
+});
+$("#size").addEventListener("input", e=>{
+  size = +e.target.value;
+  const d = Math.min(size, 24);
+  $("#dotPrev").style.width = d+"px";
+  $("#dotPrev").style.height = d+"px";
+});
+
+function resizeCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  const w = wrap.clientWidth;
+  if(w === 0) return;
+  const h = Math.round(Math.min(w * 0.75, window.innerHeight * 0.55));
+  let prev = null;
+  if(canvas.width > 0){
+    prev = document.createElement("canvas");
+    prev.width = canvas.width; prev.height = canvas.height;
+    prev.getContext("2d").drawImage(canvas,0,0);
+  }
+  canvas.width = Math.round(w * ratio);
+  canvas.height = Math.round(h * ratio);
+  canvas.style.height = h + "px";
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0,0,w,h);
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  if(prev) ctx.drawImage(prev, 0,0, prev.width/ratio, prev.height/ratio);
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function pushUndo(){
+  try{
+    undoStack.push(canvas.toDataURL());
+    if(undoStack.length > MAX_UNDO) undoStack.shift();
+  }catch(e){}
+}
+function pos(e){
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+canvas.addEventListener("pointerdown", e=>{
+  e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  pushUndo();
+  drawing = true;
+  const p = pos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(p.x + .01, p.y + .01);
+  stroke();
+});
+canvas.addEventListener("pointermove", e=>{
+  if(!drawing) return;
+  const p = pos(e);
+  ctx.lineTo(p.x, p.y);
+  stroke();
+});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>
+  canvas.addEventListener(ev, ()=>{ drawing = false; })
+);
+function stroke(){
+  ctx.strokeStyle = erasing ? "#ffffff" : color;
+  ctx.lineWidth = erasing ? size * 2.2 : size;
+  ctx.stroke();
+}
+$("#eraserBtn").addEventListener("click", function(){
+  erasing = !erasing;
+  this.classList.toggle("eraser-on", erasing);
+});
+$("#undoBtn").addEventListener("click", ()=>{
+  const last = undoStack.pop();
+  if(!last) return;
+  const img = new Image();
+  img.onload = ()=>{
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    ctx.restore();
+  };
+  img.src = last;
+});
+$("#clearBtn").addEventListener("click", ()=>{
+  pushUndo();
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+});
+
+/* บีบอัดรูปให้เล็กพอเก็บใน Firestore (จำกัด ~1MB ต่อ doc) */
+function exportImage(){
+  const MAX_W = 900;
+  let out = canvas;
+  if(canvas.width > MAX_W){
+    const scale = MAX_W / canvas.width;
+    out = document.createElement("canvas");
+    out.width = MAX_W;
+    out.height = Math.round(canvas.height * scale);
+    const octx = out.getContext("2d");
+    octx.fillStyle = "#fff";
+    octx.fillRect(0,0,out.width,out.height);
+    octx.drawImage(canvas, 0, 0, out.width, out.height);
+  }
+  let q = 0.85, data = out.toDataURL("image/jpeg", q);
+  while(data.length > 850000 && q > 0.4){
+    q -= 0.1;
+    data = out.toDataURL("image/jpeg", q);
+  }
+  return data;
+}
+
+/* ---------- Gallery (sync) ---------- */
+let drawings = [];
+function renderGallery(){
+  const g = $("#gallery");
+  g.innerHTML = "";
+  $("#galleryEmpty").style.display = drawings.length ? "none" : "block";
+  drawings.forEach(item=>{
+    const div = document.createElement("div");
+    div.className = "shot";
+    div.style.setProperty("--tilt", ((Math.random()*4)-2).toFixed(1)+"deg");
+    const img = document.createElement("img");
+    img.src = item.data; img.alt = "รูปวาด"; img.loading = "lazy";
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const span = document.createElement("span");
+    span.className = "who";
+    span.textContent = (item.by ? item.by + " · " : "") +
+      new Date(item.t).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    const del = document.createElement("button");
+    del.textContent = "🗑️"; del.setAttribute("aria-label","ลบรูป");
+    del.addEventListener("click", async ()=>{
+      if(!confirm("ลบรูปนี้ใช่ไหม? (หายทั้งสองเครื่องนะ)")) return;
+      try{ await dbApi.del(pairCode, "drawings", item.id); }
+      catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
+    });
+    meta.append(span, del);
+    div.append(img, meta);
+    g.appendChild(div);
+  });
+}
+$("#saveBtn").addEventListener("click", async function(){
+  this.disabled = true;
+  try{
+    await dbApi.add(pairCode, "drawings", { t: Date.now(), by: myName, data: exportImage() });
+    toast(dbApi.mode==="firebase" ? "ส่งเข้าแกลเลอรีแล้ว เดี๋ยวแฟนก็เห็น 💞" : "เก็บไว้ในเครื่องแล้ว 🖼️");
+  }catch(e){
+    console.error(e);
+    toast("ส่งไม่สำเร็จ เช็คเน็ตหรือ Firestore rules นะ");
+  }
+  this.disabled = false;
+});
+$("#downloadBtn").addEventListener("click", ()=>{
+  const a = document.createElement("a");
+  a.download = "วาดให้เธอ-" + new Date().toISOString().slice(0,10) + ".png";
+  a.href = canvas.toDataURL("image/png");
+  a.click();
+});
+$("#shareBtn").addEventListener("click", ()=>{
+  canvas.toBlob(async blob=>{
+    if(!blob) return;
+    const file = new File([blob], "love-drawing.png", { type:"image/png" });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      try{ await navigator.share({ files:[file], title:"วาดให้เธอ 💕" }); }catch(e){}
+    }else{
+      $("#downloadBtn").click();
+      toast("เครื่องนี้แชร์ตรงไม่ได้ เลยดาวน์โหลดให้แทนนะ 💌");
+    }
+  }, "image/png");
+});
+
+/* ---------- Schedule (sync) ---------- */
+let events = [];
+function renderEvents(){
+  const sorted = events.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const list = $("#eventList");
+  list.innerHTML = "";
+  $("#eventEmpty").style.display = sorted.length ? "none" : "block";
+  const today = startOfDay(new Date());
+  sorted.forEach(ev=>{
+    const d = startOfDay(new Date(ev.date + "T00:00:00"));
+    const diff = Math.round((d - today)/864e5);
+    const el = document.createElement("div");
+    el.className = "event" + (diff===0 ? " today" : diff<0 ? " past" : "");
+    let count;
+    if(diff === 0) count = "วันนี้แล้ว! 🎉";
+    else if(diff > 0) count = `อีก ${diff} วัน`;
+    else count = "ผ่านไปแล้ว";
+    el.innerHTML = `
+      <div class="emoji"></div>
+      <div class="info">
+        <div class="title"></div>
+        <div class="when"></div>
+      </div>
+      <div class="count"></div>
+      <button class="del" aria-label="ลบนัด">✕</button>`;
+    el.querySelector(".emoji").textContent = ev.emoji || "💖";
+    el.querySelector(".title").textContent = ev.title;
+    el.querySelector(".when").textContent = new Date(ev.date+"T00:00:00")
+      .toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"long",year:"numeric"})
+      + (ev.by ? " · เพิ่มโดย " + ev.by : "");
+    el.querySelector(".count").textContent = count;
+    el.querySelector(".del").addEventListener("click", async ()=>{
+      if(!confirm("ลบนัดนี้ใช่ไหม?")) return;
+      try{ await dbApi.del(pairCode, "events", ev.id); }
+      catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
+    });
+    list.appendChild(el);
+  });
+}
+$("#addEvent").addEventListener("click", async ()=>{
+  const title = $("#evTitle").value.trim();
+  const date = $("#evDate").value;
+  if(!title || !date){ toast("ใส่ชื่อนัดกับวันที่ก่อนน้า 🙏"); return; }
+  try{
+    await dbApi.add(pairCode, "events", { t: Date.now(), title, date, emoji: $("#evEmoji").value, by: myName });
+    $("#evTitle").value = "";
+    toast("เพิ่มนัดแล้ว 📅");
+  }catch(e){ toast("เพิ่มไม่สำเร็จ เช็คเน็ตนะ"); }
+});
+
+/* ---------- Notes (sync) ---------- */
+let notes = [];
+function renderNotes(){
+  const list = $("#notesList");
+  list.innerHTML = "";
+  $("#notesEmpty").style.display = notes.length ? "none" : "block";
+  notes.forEach(n=>{
+    const mine = n.by === myName;
+    const el = document.createElement("div");
+    el.className = "note" + (mine ? "" : " them");
+    el.style.setProperty("--tilt", ((Math.random()*2.4)-1.2).toFixed(1)+"deg");
+    const p = document.createElement("p");
+    p.textContent = n.text;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const span = document.createElement("span");
+    span.textContent = (mine ? "🐰 " : "🐻 ") + (n.by || "?") + " · " +
+      new Date(n.t).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    const del = document.createElement("button");
+    del.textContent = "🗑️"; del.setAttribute("aria-label","ลบโน้ต");
+    del.addEventListener("click", async ()=>{
+      if(!confirm("ลบโน้ตนี้ใช่ไหม?")) return;
+      try{ await dbApi.del(pairCode, "notes", n.id); }
+      catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
+    });
+    meta.append(span, del);
+    el.append(p, meta);
+    list.appendChild(el);
+  });
+}
+$("#addNote").addEventListener("click", async ()=>{
+  const text = $("#noteText").value.trim();
+  if(!text){ toast("พิมพ์ข้อความก่อนน้า ✍️"); return; }
+  try{
+    await dbApi.add(pairCode, "notes", { t: Date.now(), text, by: myName });
+    $("#noteText").value = "";
+    toast("แปะโน้ตแล้ว 📌");
+  }catch(e){ toast("ส่งไม่สำเร็จ เช็คเน็ตนะ"); }
+});
+
+/* ---------- เริ่มฟังข้อมูล ---------- */
+let unsubs = [];
+function startWatching(){
+  unsubs.forEach(u=>u());
+  unsubs = [];
+  unsubs.push(dbApi.watch(pairCode, "drawings", arr => { drawings = arr; renderGallery(); }));
+  unsubs.push(dbApi.watch(pairCode, "events",   arr => { events = arr; renderEvents(); }));
+  unsubs.push(dbApi.watch(pairCode, "notes",    arr => { notes = arr; renderNotes(); }));
+  unsubs.push(dbApi.watchSettings(pairCode, s => { annivDate = (s && s.anniv) || ""; renderAnniv(); }));
+}
+
+if(needPairing()){
+  openPairing();
+}else{
+  startWatching();
+}
+renderAnniv();
+</script>
+</body>
+</html>
