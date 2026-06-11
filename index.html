@@ -172,7 +172,27 @@ input[type=range]{flex:1;accent-color:var(--berry)}
   padding:.5rem .5rem .4rem;position:relative;
   transform:rotate(var(--tilt,0deg));
 }
-.shot img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;background:#fff}
+.shot img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;background:#fff;cursor:zoom-in}
+.like-btn{
+  display:inline-flex;align-items:center;gap:.2rem;
+  font-family:'Mali',cursive;font-size:.78rem;font-weight:600;
+  color:var(--ink-soft);padding:.15rem .4rem;border-radius:999px;
+  transition:transform .12s;
+}
+.like-btn:active{transform:scale(1.25)}
+.like-btn.liked{color:var(--berry-deep);background:#FFEDF3}
+/* ---------- Lightbox ---------- */
+dialog.photo{max-width:min(94vw,720px);width:auto;padding:.7rem}
+dialog.photo img{
+  display:block;max-width:100%;max-height:70vh;margin:0 auto;
+  border-radius:12px;border:1px solid var(--line);background:#fff;
+}
+dialog.photo .photo-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:.6rem;margin-top:.6rem;flex-wrap:wrap;
+}
+dialog.photo .photo-who{font-family:'Mali',cursive;font-size:.9rem;color:var(--ink-soft)}
+dialog.photo .like-btn{font-size:1.05rem;padding:.35rem .8rem;border:1.5px solid var(--line)}
 .shot .meta{font-family:'Mali',cursive;font-size:.72rem;color:var(--ink-soft);margin-top:.35rem;display:flex;justify-content:space-between;align-items:center;gap:.3rem}
 .shot .meta .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .shot .meta button{font-size:.95rem;flex:0 0 auto}
@@ -402,6 +422,19 @@ dialog .field{margin-bottom:.7rem}
   </p>
 </dialog>
 
+<!-- Modal ดูรูปขยาย -->
+<dialog id="photoDialog" class="photo">
+  <img id="photoBig" alt="รูปวาด">
+  <div class="photo-bar">
+    <span class="photo-who" id="photoWho"></span>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <button class="like-btn" id="photoLike">🤍 0</button>
+      <button class="btn ghost" id="photoDownload">⬇️</button>
+      <button class="btn ghost" id="photoClose">ปิด</button>
+    </div>
+  </div>
+</dialog>
+
 <!-- Modal ครบรอบ -->
 <dialog id="annivDialog">
   <h3>💞 เราคบกันวันไหนนะ?</h3>
@@ -415,10 +448,7 @@ dialog .field{margin-bottom:.7rem}
 <div class="toast" id="toast"></div>
 
 <script type="module">
-/* ════════════════════════════════════════════════════════════════
-   ★★★ ขั้นตอนตั้งค่า: วาง firebaseConfig ของคุณตรงนี้ ★★★
-   ได้มาจาก Firebase Console → Project settings → Your apps → Web app
-   ════════════════════════════════════════════════════════════════ */
+
 const firebaseConfig = {
   apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
   authDomain: "our-notebook-b9027.firebaseapp.com",
@@ -428,7 +458,6 @@ const firebaseConfig = {
   appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
   measurementId: "G-EXGXSPFLPQ"
 };
-
 /* ════════════════════════════════════════════════════════════════ */
 
 const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
@@ -475,6 +504,11 @@ if (FIREBASE_READY) {
     async del(code, name, id){
       await fs.deleteDoc(fs.doc(db, "couples", code, name, id));
     },
+    async toggleLike(code, name, id, who, on){
+      await fs.updateDoc(fs.doc(db, "couples", code, name, id), {
+        likes: on ? fs.arrayUnion(who) : fs.arrayRemove(who)
+      });
+    },
     watchSettings(code, cb){
       return fs.onSnapshot(this.coupleRef(code), snap => cb(snap.exists() ? snap.data() : {}));
     },
@@ -504,6 +538,17 @@ if (FIREBASE_READY) {
     async del(code, name, id){
       store.set("local_"+name, store.get("local_"+name, []).filter(x=>x.id!==id));
       emit(name);
+    },
+    async toggleLike(code, name, id, who, on){
+      const arr = store.get("local_"+name, []);
+      const item = arr.find(x=>x.id===id);
+      if(item){
+        const likes = new Set(item.likes || []);
+        on ? likes.add(who) : likes.delete(who);
+        item.likes = [...likes];
+        store.set("local_"+name, arr);
+        emit(name);
+      }
     },
     watchSettings(code, cb){
       (listeners.__settings = listeners.__settings || []).push(cb);
@@ -770,12 +815,20 @@ function renderGallery(){
     div.style.setProperty("--tilt", ((Math.random()*4)-2).toFixed(1)+"deg");
     const img = document.createElement("img");
     img.src = item.data; img.alt = "รูปวาด"; img.loading = "lazy";
+    img.addEventListener("click", ()=>openPhoto(item.id));
     const meta = document.createElement("div");
     meta.className = "meta";
     const span = document.createElement("span");
     span.className = "who";
     span.textContent = (item.by ? item.by + " · " : "") +
       new Date(item.t).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    const likes = item.likes || [];
+    const liked = likes.includes(myName);
+    const likeBtn = document.createElement("button");
+    likeBtn.className = "like-btn" + (liked ? " liked" : "");
+    likeBtn.textContent = (liked ? "❤️ " : "🤍 ") + likes.length;
+    likeBtn.setAttribute("aria-label", liked ? "เลิกถูกใจ" : "ถูกใจ");
+    likeBtn.addEventListener("click", ()=>toggleLike(item));
     const del = document.createElement("button");
     del.textContent = "🗑️"; del.setAttribute("aria-label","ลบรูป");
     del.addEventListener("click", async ()=>{
@@ -783,11 +836,54 @@ function renderGallery(){
       try{ await dbApi.del(pairCode, "drawings", item.id); }
       catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
     });
-    meta.append(span, del);
+    meta.append(span, likeBtn, del);
     div.append(img, meta);
     g.appendChild(div);
   });
 }
+
+/* ---------- ถูกใจรูป + ดูรูปขยาย ---------- */
+async function toggleLike(item){
+  const liked = (item.likes || []).includes(myName);
+  try{ await dbApi.toggleLike(pairCode, "drawings", item.id, myName, !liked); }
+  catch(e){ toast("กดหัวใจไม่สำเร็จ ลองอีกที"); }
+}
+const photoDialog = $("#photoDialog");
+let photoId = null;
+function openPhoto(id){
+  photoId = id;
+  renderPhotoDialog();
+  photoDialog.showModal();
+}
+function renderPhotoDialog(){
+  const item = drawings.find(x=>x.id===photoId);
+  if(!item){ if(photoDialog.open) photoDialog.close(); return; }
+  $("#photoBig").src = item.data;
+  $("#photoWho").textContent = (item.by ? "วาดโดย " + item.by + " · " : "") +
+    new Date(item.t).toLocaleDateString("th-TH",{day:"numeric",month:"long",year:"numeric"});
+  const likes = item.likes || [];
+  const liked = likes.includes(myName);
+  const btn = $("#photoLike");
+  btn.className = "like-btn" + (liked ? " liked" : "");
+  btn.textContent = (liked ? "❤️ " : "🤍 ") + likes.length;
+}
+$("#photoLike").addEventListener("click", ()=>{
+  const item = drawings.find(x=>x.id===photoId);
+  if(item) toggleLike(item);
+});
+$("#photoDownload").addEventListener("click", ()=>{
+  const item = drawings.find(x=>x.id===photoId);
+  if(!item) return;
+  const a = document.createElement("a");
+  a.download = "รูปจากแกลเลอรี-" + new Date(item.t).toISOString().slice(0,10) + ".jpg";
+  a.href = item.data;
+  a.click();
+});
+$("#photoClose").addEventListener("click", ()=>photoDialog.close());
+photoDialog.addEventListener("click", e=>{
+  /* กดพื้นที่นอกการ์ด = ปิด */
+  if(e.target === photoDialog) photoDialog.close();
+});
 $("#saveBtn").addEventListener("click", async function(){
   this.disabled = true;
   try{
@@ -935,7 +1031,11 @@ let unsubs = [];
 function startWatching(){
   unsubs.forEach(u=>u());
   unsubs = [];
-  unsubs.push(dbApi.watch(pairCode, "drawings", arr => { drawings = arr; renderGallery(); }));
+  unsubs.push(dbApi.watch(pairCode, "drawings", arr => {
+    drawings = arr;
+    renderGallery();
+    if(photoDialog.open) renderPhotoDialog();
+  }));
   unsubs.push(dbApi.watch(pairCode, "events",   arr => { events = arr; renderEvents(); }));
   unsubs.push(dbApi.watch(pairCode, "notes",    arr => { notes = arr; renderNotes(); }));
   unsubs.push(dbApi.watchSettings(pairCode, s => { annivDate = (s && s.anniv) || ""; renderAnniv(); }));
