@@ -125,6 +125,15 @@ section.page.show{display:block}
   touch-action:none;
 }
 #board{display:block;width:100%;height:auto;cursor:crosshair}
+.canvas-wrap.erasing #board{cursor:none}
+.eraser-cursor{
+  position:absolute;border:2px dashed var(--ink-soft);
+  border-radius:50%;pointer-events:none;display:none;
+  transform:translate(-50%,-50%);
+  background:rgba(255,255,255,.35);
+  box-shadow:0 0 0 1px rgba(255,255,255,.8);
+}
+.canvas-wrap.erasing .eraser-cursor.visible{display:block}
 .toolbar{display:flex;flex-wrap:wrap;gap:.55rem;align-items:center;margin-top:.85rem}
 .swatches{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
 .swatch{
@@ -285,7 +294,7 @@ dialog .field{margin-bottom:.7rem}
   <section class="page show" id="page-draw">
     <div class="card taped">
       <h2>🎨 วาดรูปให้กัน</h2>
-      <div class="canvas-wrap"><canvas id="board"></canvas></div>
+      <div class="canvas-wrap"><canvas id="board"></canvas><div class="eraser-cursor" id="eraserCursor"></div></div>
 
       <div class="toolbar">
         <div class="swatches" id="swatches"></div>
@@ -406,7 +415,10 @@ dialog .field{margin-bottom:.7rem}
 <div class="toast" id="toast"></div>
 
 <script type="module">
-
+/* ════════════════════════════════════════════════════════════════
+   ★★★ ขั้นตอนตั้งค่า: วาง firebaseConfig ของคุณตรงนี้ ★★★
+   ได้มาจาก Firebase Console → Project settings → Your apps → Web app
+   ════════════════════════════════════════════════════════════════ */
 const firebaseConfig = {
   apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
   authDomain: "our-notebook-b9027.firebaseapp.com",
@@ -416,6 +428,7 @@ const firebaseConfig = {
   appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
   measurementId: "G-EXGXSPFLPQ"
 };
+
 /* ════════════════════════════════════════════════════════════════ */
 
 const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
@@ -590,16 +603,16 @@ PALETTE.forEach((c,i)=>{
   b.style.background = c;
   b.setAttribute("aria-label","สี "+c);
   b.addEventListener("click", ()=>{
-    color = c; erasing = false;
-    $("#eraserBtn").classList.remove("eraser-on");
+    color = c;
+    setErasing(false);
     document.querySelectorAll(".swatch").forEach(s=>s.classList.remove("active"));
     b.classList.add("active");
   });
   swatchesEl.appendChild(b);
 });
 $("#customColor").addEventListener("input", e=>{
-  color = e.target.value; erasing = false;
-  $("#eraserBtn").classList.remove("eraser-on");
+  color = e.target.value;
+  setErasing(false);
   document.querySelectorAll(".swatch").forEach(s=>s.classList.remove("active"));
 });
 $("#size").addEventListener("input", e=>{
@@ -607,6 +620,7 @@ $("#size").addEventListener("input", e=>{
   const d = Math.min(size, 24);
   $("#dotPrev").style.width = d+"px";
   $("#dotPrev").style.height = d+"px";
+  updateEraserCursor();
 });
 
 function resizeCanvas(){
@@ -667,9 +681,38 @@ function stroke(){
   ctx.lineWidth = erasing ? size * 2.2 : size;
   ctx.stroke();
 }
+/* วงแสดงขนาดยางลบ */
+const eraserCursor = $("#eraserCursor");
+function setErasing(v){
+  erasing = v;
+  $("#eraserBtn").classList.toggle("eraser-on", erasing);
+  wrap.classList.toggle("erasing", erasing);
+  updateEraserCursor();
+}
+function updateEraserCursor(){
+  const d = size * 2.2;
+  eraserCursor.style.width = d + "px";
+  eraserCursor.style.height = d + "px";
+}
+canvas.addEventListener("pointermove", e=>{
+  if(!erasing) return;
+  const r = wrap.getBoundingClientRect();
+  eraserCursor.style.left = (e.clientX - r.left) + "px";
+  eraserCursor.style.top = (e.clientY - r.top) + "px";
+  eraserCursor.classList.add("visible");
+});
+canvas.addEventListener("pointerdown", e=>{
+  if(!erasing) return;
+  const r = wrap.getBoundingClientRect();
+  eraserCursor.style.left = (e.clientX - r.left) + "px";
+  eraserCursor.style.top = (e.clientY - r.top) + "px";
+  eraserCursor.classList.add("visible");
+});
+canvas.addEventListener("pointerleave", ()=>eraserCursor.classList.remove("visible"));
+canvas.addEventListener("pointercancel", ()=>eraserCursor.classList.remove("visible"));
+
 $("#eraserBtn").addEventListener("click", function(){
-  erasing = !erasing;
-  this.classList.toggle("eraser-on", erasing);
+  setErasing(!erasing);
 });
 $("#undoBtn").addEventListener("click", ()=>{
   const last = undoStack.pop();
