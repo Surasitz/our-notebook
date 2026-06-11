@@ -462,7 +462,6 @@ dialog .field{margin-bottom:.7rem}
 <div class="toast" id="toast"></div>
 
 <script type="module">
-
 const firebaseConfig = {
   apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
   authDomain: "our-notebook-b9027.firebaseapp.com",
@@ -472,7 +471,6 @@ const firebaseConfig = {
   appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
   measurementId: "G-EXGXSPFLPQ"
 };
-
 
 const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
 
@@ -1113,7 +1111,7 @@ function renderRoom(members){
   const names = Object.values(members || {});
   if(!names.length){ el.style.display = "none"; return; }
   el.style.display = "";
-  el.textContent = `👥 ในห้องนี้มี ${names.length} คน: ${names.join(" 💕 ")}`;
+  el.textContent = `👥 ${names.join(" 💕 ")}`;
 }
 
 if(needPairing()){
