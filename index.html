@@ -244,7 +244,7 @@ dialog .field{margin-bottom:.7rem}
   }
   nav.tabs button.active{background:var(--berry);color:#fff;border-color:var(--berry)}
   .gallery{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
-  .form-grid{grid-template-columns:2fr 1fr 1fr auto;align-items:end}
+  .form-grid{grid-template-columns:1.6fr 1fr 1fr .8fr auto;align-items:end}
   .form-grid .row{display:contents}
 }
 </style>
@@ -256,6 +256,7 @@ dialog .field{margin-bottom:.7rem}
   <div class="head-right">
     <span class="sync-dot" id="syncDot" title="สถานะการเชื่อมต่อ"></span>
     <button class="days-pill unset" id="daysPill">ตั้งวันครบรอบ ✎</button>
+    <button id="pairBtn" title="เปลี่ยนรหัสคู่ / ชื่อเล่น" style="font-size:1.25rem;padding:.2rem">💑</button>
   </div>
 </header>
 
@@ -322,8 +323,12 @@ dialog .field{margin-bottom:.7rem}
         </div>
         <div class="row">
           <div class="field">
-            <label for="evDate">วันที่</label>
+            <label for="evDate">วันที่เริ่ม</label>
             <input id="evDate" type="date">
+          </div>
+          <div class="field">
+            <label for="evDateEnd">ถึงวันที่ (ถ้าไปหลายวัน)</label>
+            <input id="evDateEnd" type="date">
           </div>
           <div class="field">
             <label for="evEmoji">อีโมจิ</label>
@@ -372,8 +377,13 @@ dialog .field{margin-bottom:.7rem}
     <input id="myName" placeholder="เช่น มะลิ 🐰" maxlength="20">
   </div>
   <div class="tool-row" style="margin-top:.4rem">
-    <button class="btn primary" id="pairSave" style="flex:1;justify-content:center">เริ่มใช้เลย 💕</button>
+    <button class="btn primary" id="pairSave" style="flex:1;justify-content:center">บันทึก 💕</button>
+    <button class="btn ghost" id="pairCancel" style="display:none">ปิด</button>
   </div>
+  <p class="sub" style="margin:.7rem 0 0">
+    💡 ใส่รหัสผิดไม่ต้องตกใจ กดปุ่ม 💑 มุมขวาบนเพื่อกลับมาแก้ได้ตลอด
+    ข้อมูลจะตามรหัสคู่ พอใส่ตรงกับแฟนเมื่อไหร่ก็เห็นของกันทันที
+  </p>
 </dialog>
 
 <!-- Modal ครบรอบ -->
@@ -394,13 +404,12 @@ dialog .field{margin-bottom:.7rem}
    ได้มาจาก Firebase Console → Project settings → Your apps → Web app
    ════════════════════════════════════════════════════════════════ */
 const firebaseConfig = {
-  apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
-  authDomain: "our-notebook-b9027.firebaseapp.com",
-  projectId: "our-notebook-b9027",
-  storageBucket: "our-notebook-b9027.firebasestorage.app",
-  messagingSenderId: "90949439755",
-  appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
-  measurementId: "G-EXGXSPFLPQ"
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE.appspot.com",
+  messagingSenderId: "0000000000",
+  appId: "PASTE_APP_ID"
 };
 /* ════════════════════════════════════════════════════════════════ */
 
@@ -508,8 +517,11 @@ function needPairing(){
 function openPairing(){
   $("#pairCode").value = pairCode;
   $("#myName").value = myName;
+  $("#pairCancel").style.display = needPairing() ? "none" : "";
   pairDialog.showModal();
 }
+$("#pairBtn").addEventListener("click", openPairing);
+$("#pairCancel").addEventListener("click", ()=>pairDialog.close());
 $("#pairSave").addEventListener("click", ()=>{
   const code = sanitizeCode($("#pairCode").value);
   const name = $("#myName").value.trim();
@@ -732,7 +744,14 @@ $("#saveBtn").addEventListener("click", async function(){
   this.disabled = true;
   try{
     await dbApi.add(pairCode, "drawings", { t: Date.now(), by: myName, data: exportImage() });
-    toast(dbApi.mode==="firebase" ? "ส่งเข้าแกลเลอรีแล้ว เดี๋ยวแฟนก็เห็น 💞" : "เก็บไว้ในเครื่องแล้ว 🖼️");
+    /* ส่งสำเร็จ → ล้างผืนวาดให้พร้อมวาดรูปใหม่ (กด ↩️ ย้อนคืนได้) */
+    pushUndo();
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    toast(dbApi.mode==="firebase" ? "ส่งแล้ว เดี๋ยวแฟนก็เห็น 💞 (กด ↩️ ถ้าอยากวาดต่อ)" : "เก็บไว้ในเครื่องแล้ว 🖼️");
   }catch(e){
     console.error(e);
     toast("ส่งไม่สำเร็จ เช็คเน็ตหรือ Firestore rules นะ");
@@ -767,14 +786,25 @@ function renderEvents(){
   $("#eventEmpty").style.display = sorted.length ? "none" : "block";
   const today = startOfDay(new Date());
   sorted.forEach(ev=>{
-    const d = startOfDay(new Date(ev.date + "T00:00:00"));
-    const diff = Math.round((d - today)/864e5);
+    const start = startOfDay(new Date(ev.date + "T00:00:00"));
+    const end = ev.dateEnd ? startOfDay(new Date(ev.dateEnd + "T00:00:00")) : start;
+    const diffStart = Math.round((start - today)/864e5);
+    const diffEnd = Math.round((end - today)/864e5);
+    const ongoing = diffStart <= 0 && diffEnd >= 0;
     const el = document.createElement("div");
-    el.className = "event" + (diff===0 ? " today" : diff<0 ? " past" : "");
+    el.className = "event" + (ongoing ? " today" : diffEnd < 0 ? " past" : "");
     let count;
-    if(diff === 0) count = "วันนี้แล้ว! 🎉";
-    else if(diff > 0) count = `อีก ${diff} วัน`;
+    if(ongoing) count = ev.dateEnd && diffStart < 0 ? "กำลังไปด้วยกันอยู่! 🎉" : "วันนี้แล้ว! 🎉";
+    else if(diffStart > 0) count = `อีก ${diffStart} วัน`;
     else count = "ผ่านไปแล้ว";
+    const fmt = d => new Date(d+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    let whenText;
+    if(ev.dateEnd && ev.dateEnd !== ev.date){
+      const nights = Math.round((end - start)/864e5);
+      whenText = `${fmt(ev.date)} – ${fmt(ev.dateEnd)} (${nights+1} วัน)`;
+    }else{
+      whenText = new Date(ev.date+"T00:00:00").toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"long",year:"numeric"});
+    }
     el.innerHTML = `
       <div class="emoji"></div>
       <div class="info">
@@ -785,9 +815,7 @@ function renderEvents(){
       <button class="del" aria-label="ลบนัด">✕</button>`;
     el.querySelector(".emoji").textContent = ev.emoji || "💖";
     el.querySelector(".title").textContent = ev.title;
-    el.querySelector(".when").textContent = new Date(ev.date+"T00:00:00")
-      .toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"long",year:"numeric"})
-      + (ev.by ? " · เพิ่มโดย " + ev.by : "");
+    el.querySelector(".when").textContent = whenText + (ev.by ? " · เพิ่มโดย " + ev.by : "");
     el.querySelector(".count").textContent = count;
     el.querySelector(".del").addEventListener("click", async ()=>{
       if(!confirm("ลบนัดนี้ใช่ไหม?")) return;
@@ -800,10 +828,16 @@ function renderEvents(){
 $("#addEvent").addEventListener("click", async ()=>{
   const title = $("#evTitle").value.trim();
   const date = $("#evDate").value;
-  if(!title || !date){ toast("ใส่ชื่อนัดกับวันที่ก่อนน้า 🙏"); return; }
+  const dateEnd = $("#evDateEnd").value;
+  if(!title || !date){ toast("ใส่ชื่อนัดกับวันที่เริ่มก่อนน้า 🙏"); return; }
+  if(dateEnd && dateEnd < date){ toast("วันจบต้องไม่มาก่อนวันเริ่มนะ 😅"); return; }
   try{
-    await dbApi.add(pairCode, "events", { t: Date.now(), title, date, emoji: $("#evEmoji").value, by: myName });
+    const data = { t: Date.now(), title, date, emoji: $("#evEmoji").value, by: myName };
+    if(dateEnd && dateEnd !== date) data.dateEnd = dateEnd;
+    await dbApi.add(pairCode, "events", data);
     $("#evTitle").value = "";
+    $("#evDate").value = "";
+    $("#evDateEnd").value = "";
     toast("เพิ่มนัดแล้ว 📅");
   }catch(e){ toast("เพิ่มไม่สำเร็จ เช็คเน็ตนะ"); }
 });
