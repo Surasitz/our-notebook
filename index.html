@@ -80,6 +80,12 @@ header{
 }
 .banner.show{display:block}
 .banner b{font-weight:700}
+.room-info{
+  font-family:'Mali',cursive;font-size:.8rem;color:var(--ink-soft);
+  text-align:center;padding:.4rem 1rem;
+  border-bottom:1.5px dashed var(--line);
+  background:rgba(255,255,255,.55);
+}
 
 /* ---------- Tabs ---------- */
 main{flex:1;width:100%;max-width:860px;margin:0 auto;padding:1rem 1rem 6rem}
@@ -301,6 +307,7 @@ dialog .field{margin-bottom:.7rem}
   ⚠️ <b>ยังไม่ได้ตั้งค่า Firebase</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เครื่องเดียว ยังไม่ sync กับแฟน
   ให้วาง firebaseConfig ในไฟล์ index.html ตามคู่มือก่อนนะ
 </div>
+<div class="room-info" id="roomInfo" style="display:none"></div>
 
 <nav class="tabs" role="tablist">
   <button class="active" data-page="draw" role="tab"><span class="ico">🎨</span>วาดรูป</button>
@@ -513,8 +520,17 @@ if (FIREBASE_READY) {
     watchSettings(code, cb){
       return fs.onSnapshot(this.coupleRef(code), snap => cb(snap.exists() ? snap.data() : {}));
     },
+    async getSettings(code){
+      const snap = await fs.getDoc(this.coupleRef(code));
+      return snap.exists() ? snap.data() : {};
+    },
     async setSettings(code, data){
       await fs.setDoc(this.coupleRef(code), data, { merge: true });
+    },
+    async removeMember(code, devId){
+      try{
+        await fs.updateDoc(this.coupleRef(code), { ["members."+devId]: fs.deleteField() });
+      }catch(e){ /* ห้องเก่าอาจไม่มีอยู่ ไม่เป็นไร */ }
     }
   };
 } else {
@@ -556,8 +572,19 @@ if (FIREBASE_READY) {
       cb(store.get("local_settings", {}));
       return ()=>{};
     },
+    async getSettings(code){
+      return store.get("local_settings", {});
+    },
     async setSettings(code, data){
-      store.set("local_settings", { ...store.get("local_settings", {}), ...data });
+      const old = store.get("local_settings", {});
+      const merged = { ...old, ...data };
+      if(data.members) merged.members = { ...(old.members||{}), ...data.members };
+      store.set("local_settings", merged);
+      (listeners.__settings||[]).forEach(cb => cb(store.get("local_settings", {})));
+    },
+    async removeMember(code, devId){
+      const s = store.get("local_settings", {});
+      if(s.members){ delete s.members[devId]; store.set("local_settings", s); }
       (listeners.__settings||[]).forEach(cb => cb(store.get("local_settings", {})));
     }
   };
@@ -571,6 +598,12 @@ setSync(false);
 /* ---------- Pairing (รหัสคู่ + ชื่อเรา) ---------- */
 let pairCode = store.get("pairCode", "");
 let myName = store.get("myName", "");
+/* รหัสประจำเครื่อง ใช้แยกว่าใครเป็นใคร (เครื่องเดิมแก้ชื่อตัวเองได้ ไม่นับว่าซ้ำ) */
+let deviceId = store.get("deviceId", "");
+if(!deviceId){
+  deviceId = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  store.set("deviceId", deviceId);
+}
 const pairDialog = $("#pairDialog");
 function sanitizeCode(s){
   return s.toLowerCase().trim().replace(/\s+/g,"-").replace(/[^a-z0-9ก-๙\-_.]/g,"").slice(0,40);
@@ -586,17 +619,40 @@ function openPairing(){
 }
 $("#pairBtn").addEventListener("click", openPairing);
 $("#pairCancel").addEventListener("click", ()=>pairDialog.close());
-$("#pairSave").addEventListener("click", ()=>{
+$("#pairSave").addEventListener("click", async ()=>{
   const code = sanitizeCode($("#pairCode").value);
   const name = $("#myName").value.trim();
   if(code.length < 4){ toast("รหัสคู่สั้นไปหน่อย เอาอย่างน้อย 4 ตัวนะ"); return; }
   if(!name){ toast("ใส่ชื่อเล่นด้วยน้า"); return; }
-  pairCode = code; myName = name;
-  store.set("pairCode", code);
-  store.set("myName", name);
-  pairDialog.close();
-  startWatching();
-  toast("เชื่อมสมุดแล้ว 💑 บอกรหัสนี้ให้แฟนด้วยนะ: " + code);
+  $("#pairSave").disabled = true;
+  try{
+    /* เช็คชื่อซ้ำในห้องนั้น (ยกเว้นเครื่องเราเอง) */
+    const settings = await dbApi.getSettings(code);
+    const members = settings.members || {};
+    const taken = Object.entries(members).some(([dev, n]) =>
+      dev !== deviceId && String(n).trim().toLowerCase() === name.toLowerCase()
+    );
+    if(taken){
+      toast(`ชื่อ "${name}" มีคนใช้ในห้องนี้แล้ว เปลี่ยนชื่อหน่อยน้า 😅`);
+      $("#pairSave").disabled = false;
+      return;
+    }
+    /* ย้ายห้อง → เอาชื่อเราออกจากห้องเก่า */
+    const oldCode = pairCode;
+    if(oldCode && oldCode !== code) await dbApi.removeMember(oldCode, deviceId);
+    pairCode = code; myName = name;
+    store.set("pairCode", code);
+    store.set("myName", name);
+    /* ลงทะเบียนเราเข้าห้อง */
+    await dbApi.setSettings(code, { members: { [deviceId]: name } });
+    pairDialog.close();
+    startWatching();
+    toast("เชื่อมสมุดแล้ว 💑 บอกรหัสนี้ให้แฟนด้วยนะ: " + code);
+  }catch(e){
+    console.error(e);
+    toast("บันทึกไม่สำเร็จ เช็คเน็ตแล้วลองอีกทีนะ");
+  }
+  $("#pairSave").disabled = false;
 });
 
 /* ---------- Tabs ---------- */
@@ -1039,13 +1095,27 @@ function startWatching(){
   }));
   unsubs.push(dbApi.watch(pairCode, "events",   arr => { events = arr; renderEvents(); }));
   unsubs.push(dbApi.watch(pairCode, "notes",    arr => { notes = arr; renderNotes(); }));
-  unsubs.push(dbApi.watchSettings(pairCode, s => { annivDate = (s && s.anniv) || ""; renderAnniv(); }));
+  unsubs.push(dbApi.watchSettings(pairCode, s => {
+    annivDate = (s && s.anniv) || "";
+    renderAnniv();
+    renderRoom(s && s.members);
+  }));
+}
+/* แถบสมาชิกในห้อง */
+function renderRoom(members){
+  const el = $("#roomInfo");
+  const names = Object.values(members || {});
+  if(!names.length){ el.style.display = "none"; return; }
+  el.style.display = "";
+  el.textContent = `👥 ในห้องนี้มี ${names.length} คน: ${names.join(" 💕 ")}`;
 }
 
 if(needPairing()){
   openPairing();
 }else{
   startWatching();
+  /* ลงทะเบียนตัวเองเข้าห้อง (เผื่อเคยจับคู่ไว้ก่อนมีฟีเจอร์นี้) */
+  dbApi.setSettings(pairCode, { members: { [deviceId]: myName } }).catch(()=>{});
 }
 renderAnniv();
 </script>
