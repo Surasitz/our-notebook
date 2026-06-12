@@ -372,6 +372,47 @@ dialog .field{margin-bottom:.7rem}
 }
 [data-theme="dark"] .bday-bar{background:linear-gradient(90deg,#3B3050,#3D3420);color:#FF9FBC}
 
+/* ---------- ฉลองครบรอบ ---------- */
+.celebrate{
+  position:fixed;inset:0;z-index:100;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(67,57,91,.55);backdrop-filter:blur(4px);
+  padding:1.5rem;overflow:hidden;
+}
+.celebrate.show{display:flex}
+.celebrate .card-c{
+  position:relative;z-index:2;text-align:center;
+  background:linear-gradient(160deg,#FFF0F5,#FFE3EC 55%,#FFF3D6);
+  border-radius:26px;padding:2rem 1.6rem 1.7rem;
+  max-width:330px;width:100%;
+  box-shadow:0 18px 50px rgba(67,57,91,.4);
+  border:3px solid #fff;
+  animation:pop .5s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.celebrate .big{font-size:3rem;line-height:1;animation:beat 1.4s ease-in-out infinite;display:inline-block}
+.celebrate h3{font-family:'Mali',cursive;font-size:1.35rem;color:#A3375E;margin:.6rem 0 .2rem}
+.celebrate p{font-family:'Mali',cursive;font-size:.95rem;color:#7A4B63;line-height:1.6}
+.celebrate .btn{margin-top:1rem}
+.celebrate .heart-float{
+  position:absolute;bottom:-40px;font-size:1.5rem;z-index:1;
+  animation:rise linear forwards;opacity:.9;
+}
+@keyframes rise{
+  from{transform:translateY(0) rotate(0deg);opacity:.95}
+  to{transform:translateY(-110vh) rotate(40deg);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .celebrate .heart-float{display:none}
+  .celebrate .big{animation:none}
+}
+[data-theme="dark"] .celebrate .card-c{
+  background:linear-gradient(160deg,#3B3050,#4A2B3C 55%,#3D3420);
+  border-color:#5A4767;
+}
+[data-theme="dark"] .celebrate h3{color:#FF9FBC}
+[data-theme="dark"] .celebrate p{color:#D9C7DE}
+
 /* ---------- โหมดวาด ---------- */
 .mode-row{display:flex;gap:.5rem;margin-bottom:.8rem}
 .mode-row .btn{flex:1;justify-content:center}
@@ -442,6 +483,7 @@ dialog .field{margin-bottom:.7rem}
   ⚠️ <b>ยังไม่ได้ตั้งค่า Firebase</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เครื่องเดียว ยังไม่ sync กับแฟน
   ให้วาง firebaseConfig ในไฟล์ index.html ตามคู่มือก่อนนะ
 </div>
+<div class="bday-bar" id="annivBar" style="display:none"></div>
 <div class="bday-bar" id="bdayBar" style="display:none"></div>
 
 <nav class="tabs" role="tablist">
@@ -672,6 +714,16 @@ dialog .field{margin-bottom:.7rem}
     <button class="btn ghost" id="annivCancel">ปิด</button>
   </div>
 </dialog>
+
+<!-- การ์ดฉลองครบรอบ -->
+<div class="celebrate" id="celebrate">
+  <div class="card-c">
+    <span class="big">💞</span>
+    <h3 id="celebrateTitle">สุขสันต์วันครบรอบ!</h3>
+    <p id="celebrateText"></p>
+    <button class="btn primary" id="celebrateClose">รักนะ 💕</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -975,11 +1027,61 @@ document.querySelectorAll("nav.tabs button").forEach(btn=>{
 const daysPill = $("#daysPill"), annivDialog = $("#annivDialog");
 let annivDate = "";
 function renderAnniv(){
-  if(!annivDate){ daysPill.textContent = "ตั้งวันครบรอบ ✎"; daysPill.classList.add("unset"); return; }
-  const days = Math.floor((startOfDay(new Date()) - startOfDay(new Date(annivDate))) / 864e5) + 1;
+  const annivBar = $("#annivBar");
+  if(!annivDate){
+    daysPill.textContent = "ตั้งวันครบรอบ ✎";
+    daysPill.classList.add("unset");
+    annivBar.style.display = "none";
+    return;
+  }
+  const today = startOfDay(new Date());
+  const days = Math.floor((today - startOfDay(new Date(annivDate))) / 864e5) + 1;
   daysPill.textContent = `คบกันมา ${days.toLocaleString("th-TH")} วัน 💕`;
   daysPill.classList.remove("unset");
+  /* ครบรอบปีถัดไป */
+  const d0 = new Date(annivDate + "T00:00:00");
+  let next = new Date(today.getFullYear(), d0.getMonth(), d0.getDate());
+  if(next < today) next = new Date(today.getFullYear()+1, d0.getMonth(), d0.getDate());
+  const diff = Math.round((startOfDay(next) - today)/864e5);
+  const years = next.getFullYear() - d0.getFullYear();
+  if(diff === 0 && years > 0){
+    annivBar.style.display = "";
+    annivBar.textContent = `🎉 วันนี้ครบรอบ ${years} ปีของเราแล้ว! 💞`;
+    celebrateAnniv(years);
+  }else if(diff > 0 && diff <= 30 && years > 0){
+    annivBar.style.display = "";
+    annivBar.textContent = `💞 อีก ${diff} วัน จะครบรอบ ${years} ปีของเราแล้วน้า`;
+  }else{
+    annivBar.style.display = "none";
+  }
 }
+/* การ์ดฉลอง + หัวใจลอย โชว์วันละครั้ง */
+function celebrateAnniv(years){
+  const key = "annivShown_" + new Date().toISOString().slice(0,10);
+  if(store.get(key, false)) return;
+  store.set(key, true);
+  const days = Math.floor((startOfDay(new Date()) - startOfDay(new Date(annivDate))) / 864e5) + 1;
+  $("#celebrateTitle").textContent = `สุขสันต์วันครบรอบ ${years} ปี! 🎂`;
+  $("#celebrateText").textContent =
+    `เราเดินทางด้วยกันมา ${days.toLocaleString("th-TH")} วันแล้วนะ ` +
+    `ขอบคุณที่อยู่ข้างกันเสมอ แล้วเดินไปด้วยกันต่อนานๆ เลยน้า ✨`;
+  const overlay = $("#celebrate");
+  overlay.classList.add("show");
+  /* โปรยหัวใจ */
+  const emojis = ["💖","💕","💗","🩷","💞","🌸","✨"];
+  for(let i=0; i<16; i++){
+    const s = document.createElement("span");
+    s.className = "heart-float";
+    s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left = (Math.random()*92+2) + "%";
+    s.style.fontSize = (1 + Math.random()*1.4) + "rem";
+    s.style.animationDuration = (3.5 + Math.random()*3) + "s";
+    s.style.animationDelay = (Math.random()*2.5) + "s";
+    overlay.appendChild(s);
+    setTimeout(()=>s.remove(), 9000);
+  }
+}
+$("#celebrateClose").addEventListener("click", ()=>$("#celebrate").classList.remove("show"));
 daysPill.addEventListener("click", ()=>{
   $("#annivInput").value = annivDate || "";
   annivDialog.showModal();
