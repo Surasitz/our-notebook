@@ -272,7 +272,56 @@ dialog .field{margin-bottom:.7rem}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ---------- Desktop ---------- */
+/* ---------- Dark mode ---------- */
+[data-theme="dark"]{
+  --paper:#211C31;--card:#2D2843;--ink:#EFEAF8;--ink-soft:#A79EC8;
+  --line:rgba(255,255,255,.14);--shadow:0 4px 14px rgba(0,0,0,.45);
+}
+[data-theme="dark"] body{background-color:var(--paper)}
+[data-theme="dark"] header{background:rgba(33,28,49,.92)}
+[data-theme="dark"] nav.tabs{background:#2D2843;border-color:var(--line)}
+[data-theme="dark"] nav.tabs button.active{background:rgba(255,92,138,.18)}
+[data-theme="dark"] .event,
+[data-theme="dark"] .shot,
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field select,
+[data-theme="dark"] .note-form textarea,
+[data-theme="dark"] dialog{background:#2D2843;color:var(--ink)}
+[data-theme="dark"] .btn{background:#3B3457;color:var(--ink)}
+[data-theme="dark"] .btn.ghost{background:#2D2843}
+[data-theme="dark"] .btn.primary{background:var(--berry);color:#fff}
+[data-theme="dark"] .btn.mint{background:var(--mint);color:#fff}
+[data-theme="dark"] .btn.danger{background:#4A2433;color:#FF8FAE}
+[data-theme="dark"] .btn.eraser-on{background:#EFEAF8;color:#211C31}
+[data-theme="dark"] .note{background:#3B3050}
+[data-theme="dark"] .note.them{background:#23404A}
+[data-theme="dark"] .days-pill.unset{background:#2D2843}
+[data-theme="dark"] .like-btn.liked{background:rgba(255,92,138,.18)}
+[data-theme="dark"] .banner{background:#3D3420;border-color:#5A4B22;color:#F2D894}
+[data-theme="dark"] .empty{border-color:var(--line)}
+
+/* ---------- รายละเอียดนัด ---------- */
+.event .detail{font-size:.78rem;margin-top:.15rem;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
+
+/* ---------- Trip book ---------- */
+.trip{
+  display:flex;align-items:center;gap:.8rem;
+  background:var(--card);border-radius:14px;box-shadow:var(--shadow);
+  padding:.85rem .9rem;margin-bottom:.7rem;cursor:pointer;
+  border-left:5px solid var(--sun);
+  transition:transform .12s;
+}
+.trip:active{transform:scale(.985)}
+.trip .emoji{font-size:1.8rem}
+.trip .info{flex:1;min-width:0}
+.trip .info .title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trip .info .when{font-size:.78rem;color:var(--ink-soft)}
+.trip .count{font-family:'Mali',cursive;font-size:.8rem;color:var(--ink-soft);white-space:nowrap}
+.trip .del{color:var(--ink-soft);font-size:1rem;padding:.2rem}
+.shot .cap{
+  font-family:'Mali',cursive;font-size:.78rem;color:var(--ink);
+  margin-top:.3rem;line-height:1.35;word-break:break-word;
+}
 @media (min-width:720px){
   main{padding-bottom:2rem;padding-top:1.4rem}
   nav.tabs{
@@ -289,6 +338,7 @@ dialog .field{margin-bottom:.7rem}
   .form-grid{grid-template-columns:1.6fr 1fr 1fr .8fr auto;align-items:end}
   .form-grid .row{display:contents}
   .form-grid .row .emoji-field{grid-column:auto}
+  .form-grid .detail-field{grid-column:1 / 5}
 }
 </style>
 </head>
@@ -299,6 +349,7 @@ dialog .field{margin-bottom:.7rem}
   <div class="head-right">
     <span class="sync-dot" id="syncDot" title="สถานะการเชื่อมต่อ"></span>
     <button class="days-pill unset" id="daysPill">ตั้งวันครบรอบ ✎</button>
+    <button id="themeBtn" title="สลับโหมดกลางวัน/กลางคืน" style="font-size:1.15rem;padding:.2rem">🌙</button>
     <button id="pairBtn" title="เปลี่ยนรหัสคู่ / ชื่อเล่น" style="font-size:1.25rem;padding:.2rem">💑</button>
   </div>
 </header>
@@ -311,6 +362,7 @@ dialog .field{margin-bottom:.7rem}
 <nav class="tabs" role="tablist">
   <button class="active" data-page="draw" role="tab"><span class="ico">🎨</span>วาดรูป</button>
   <button data-page="gallery" role="tab"><span class="ico">🖼️</span>แกลเลอรี</button>
+  <button data-page="trips" role="tab"><span class="ico">🧳</span>ทริป</button>
   <button data-page="schedule" role="tab"><span class="ico">📅</span>ปฏิทินคู่</button>
   <button data-page="notes" role="tab"><span class="ico">💌</span>โน้ตรัก</button>
 </nav>
@@ -355,6 +407,63 @@ dialog .field{margin-bottom:.7rem}
     </div>
   </section>
 
+  <!-- ============ ทริป ============ -->
+  <section class="page" id="page-trips">
+    <div id="tripHome">
+      <div class="card taped mint">
+        <h2>🧳 สมุดทริปของเรา</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="tripName">ชื่อทริป</label>
+            <input id="tripName" placeholder="เช่น เที่ยวเชียงใหม่ 🏔" maxlength="40">
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="tripStart">วันไป</label>
+              <input id="tripStart" type="date">
+            </div>
+            <div class="field">
+              <label for="tripEnd">วันกลับ</label>
+              <input id="tripEnd" type="date">
+            </div>
+            <div class="field emoji-field">
+              <label for="tripEmoji">อีโมจิปก</label>
+              <select id="tripEmoji">
+                <option>🏔️</option><option>🏖️</option><option>✈️</option><option>🚗</option>
+                <option>⛺</option><option>🎡</option><option>🛕</option><option>🌊</option>
+                <option>🍜</option><option>☕</option><option>📸</option><option>💞</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn primary" id="addTrip" style="justify-content:center">สร้างทริป ➕</button>
+        </div>
+      </div>
+      <div id="tripList"></div>
+      <div class="empty" id="tripEmpty">ยังไม่มีทริปเลย~ สร้างทริปแรกแล้วไปเก็บความทรงจำกัน 🧳</div>
+    </div>
+
+    <div id="tripView" style="display:none">
+      <button class="btn ghost" id="tripBack">← กลับไปหน้าทริป</button>
+      <div class="card taped sun" style="margin-top:1.1rem">
+        <h2 id="tripTitle"></h2>
+        <p class="hint" id="tripDates"></p>
+        <div class="form-grid" style="margin-top:.7rem">
+          <div class="field">
+            <label for="tripCaption">แคปชั่นรูป (ใส่หรือไม่ก็ได้)</label>
+            <input id="tripCaption" placeholder="เช่น คาเฟ่วันแรก น่ารักมาก ☕" maxlength="80">
+          </div>
+          <button class="btn primary" id="addPhotoBtn" style="justify-content:center">📷 เพิ่มรูปถ่าย</button>
+          <input type="file" id="photoFile" accept="image/*" multiple hidden>
+        </div>
+        <p class="hint" style="margin-top:.5rem">รูปจะถูกย่อขนาดอัตโนมัติ เลือกได้ครั้งละไม่เกิน 5 รูป</p>
+      </div>
+      <div class="card">
+        <div class="gallery" id="tripGallery"></div>
+        <div class="empty" id="tripPhotosEmpty">ยังไม่มีรูปในทริปนี้ อัปรูปแรกเลย 📷</div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ ปฏิทินคู่ ============ -->
   <section class="page" id="page-schedule">
     <div class="card taped sun">
@@ -381,6 +490,10 @@ dialog .field{margin-bottom:.7rem}
               <option>🎡</option><option>📸</option><option>🐶</option><option>⭐</option>
             </select>
           </div>
+        </div>
+        <div class="field detail-field">
+          <label for="evDetail">รายละเอียด (ไม่บังคับ)</label>
+          <input id="evDetail" placeholder="เช่น เจอกัน 18:00 ที่ BTS อโศก 🚆" maxlength="140">
         </div>
         <button class="btn primary" id="addEvent" style="justify-content:center">เพิ่มนัด ➕</button>
       </div>
@@ -432,6 +545,7 @@ dialog .field{margin-bottom:.7rem}
 <!-- Modal ดูรูปขยาย -->
 <dialog id="photoDialog" class="photo">
   <img id="photoBig" alt="รูปวาด">
+  <p class="shot-caption" id="photoCap" style="font-family:'Mali',cursive;margin:.5rem .2rem 0;display:none"></p>
   <div class="photo-bar">
     <span class="photo-who" id="photoWho"></span>
     <div style="display:flex;gap:.5rem;align-items:center">
@@ -466,6 +580,8 @@ const firebaseConfig = {
 };
 
 const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
+/* (ทางเลือกเสริมความปลอดภัย) เปิด App Check แล้ววาง reCAPTCHA v3 site key ตรงนี้ */
+const APPCHECK_SITE_KEY = "";
 
 const $ = s => document.querySelector(s);
 const store = {
@@ -490,6 +606,15 @@ if (FIREBASE_READY) {
   const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
   const fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
   const app = initializeApp(firebaseConfig);
+  if(APPCHECK_SITE_KEY){
+    try{
+      const ac = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js");
+      ac.initializeAppCheck(app, {
+        provider: new ac.ReCaptchaV3Provider(APPCHECK_SITE_KEY),
+        isTokenAutoRefreshEnabled: true
+      });
+    }catch(e){ console.error("AppCheck init failed", e); }
+  }
   const db = fs.getFirestore(app);
 
   dbApi = {
@@ -528,6 +653,24 @@ if (FIREBASE_READY) {
       try{
         await fs.updateDoc(this.coupleRef(code), { ["members."+devId]: fs.deleteField() });
       }catch(e){ /* ห้องเก่าอาจไม่มีอยู่ ไม่เป็นไร */ }
+    },
+    async copyRoom(oldId, newId){
+      let copied = false;
+      for(const c of ["drawings","events","notes","trips","tripphotos"]){
+        const newSnap = await fs.getDocs(fs.query(this.col(newId, c), fs.limit(1)));
+        if(!newSnap.empty) continue; /* ห้องใหม่มีของแล้ว ไม่ copy ซ้ำ */
+        const oldSnap = await fs.getDocs(fs.query(this.col(oldId, c), fs.limit(300)));
+        for(const d of oldSnap.docs){
+          await fs.addDoc(this.col(newId, c), d.data());
+          copied = true;
+        }
+      }
+      const oldSet = await fs.getDoc(this.coupleRef(oldId));
+      if(oldSet.exists()){
+        await fs.setDoc(this.coupleRef(newId), oldSet.data(), { merge: true });
+        copied = true;
+      }
+      return copied;
     }
   };
 } else {
@@ -583,7 +726,8 @@ if (FIREBASE_READY) {
       const s = store.get("local_settings", {});
       if(s.members){ delete s.members[devId]; store.set("local_settings", s); }
       (listeners.__settings||[]).forEach(cb => cb(store.get("local_settings", {})));
-    }
+    },
+    async copyRoom(){ return false; }
   };
 }
 function setSync(on){
@@ -592,14 +736,47 @@ function setSync(on){
 }
 setSync(false);
 
+/* ---------- โหมดกลางวัน/กลางคืน ---------- */
+const themeBtn = $("#themeBtn");
+function applyTheme(t){
+  document.documentElement.dataset.theme = t;
+  themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+}
+let theme = store.get("theme", "") ||
+  (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+applyTheme(theme);
+themeBtn.addEventListener("click", ()=>{
+  theme = theme === "dark" ? "light" : "dark";
+  store.set("theme", theme);
+  applyTheme(theme);
+});
+
 /* ---------- Pairing (รหัสคู่ + ชื่อเรา) ---------- */
 let pairCode = store.get("pairCode", "");
 let myName = store.get("myName", "");
+let roomId = ""; /* ชื่อห้องจริงใน database = hash ของรหัสคู่ */
 /* รหัสประจำเครื่อง ใช้แยกว่าใครเป็นใคร (เครื่องเดิมแก้ชื่อตัวเองได้ ไม่นับว่าซ้ำ) */
 let deviceId = store.get("deviceId", "");
 if(!deviceId){
   deviceId = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   store.set("deviceId", deviceId);
+}
+/* แปลงรหัสคู่เป็น SHA-256 — ใน database จะเห็นแค่ตัวอักษรมั่วๆ เดารหัสจริงกลับไม่ได้ */
+async function hashCode(code){
+  if(!(crypto && crypto.subtle)) return code; /* เผื่อเปิดแบบไม่ใช่ https */
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ournotebook::" + code));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+}
+/* ย้ายข้อมูลจากห้องชื่อรหัสตรงๆ (เวอร์ชันเก่า) มาห้อง hash ครั้งเดียว */
+async function migrateOldRoom(){
+  if(roomId === pairCode) return;
+  const flag = "migrated_" + pairCode;
+  if(store.get(flag, false)) return;
+  try{
+    const copied = await dbApi.copyRoom(pairCode, roomId);
+    store.set(flag, true);
+    if(copied) toast("อัปเกรดห้องเป็นแบบเข้ารหัสเรียบร้อย ✅");
+  }catch(e){ console.error(e); }
 }
 const pairDialog = $("#pairDialog");
 function sanitizeCode(s){
@@ -623,8 +800,9 @@ $("#pairSave").addEventListener("click", async ()=>{
   if(!name){ toast("ใส่ชื่อเล่นด้วยน้า"); return; }
   $("#pairSave").disabled = true;
   try{
+    const newRoom = await hashCode(code);
     /* เช็คชื่อซ้ำในห้องนั้น (ยกเว้นเครื่องเราเอง) */
-    const settings = await dbApi.getSettings(code);
+    const settings = await dbApi.getSettings(newRoom);
     const members = settings.members || {};
     const taken = Object.entries(members).some(([dev, n]) =>
       dev !== deviceId && String(n).trim().toLowerCase() === name.toLowerCase()
@@ -635,15 +813,13 @@ $("#pairSave").addEventListener("click", async ()=>{
       return;
     }
     /* ย้ายห้อง → เอาชื่อเราออกจากห้องเก่า */
-    const oldCode = pairCode;
-    if(oldCode && oldCode !== code) await dbApi.removeMember(oldCode, deviceId);
+    if(roomId && roomId !== newRoom) await dbApi.removeMember(roomId, deviceId);
     pairCode = code; myName = name;
     store.set("pairCode", code);
     store.set("myName", name);
-    /* ลงทะเบียนเราเข้าห้อง */
-    await dbApi.setSettings(code, { members: { [deviceId]: name } });
     pairDialog.close();
-    startWatching();
+    await startWatching();
+    await dbApi.setSettings(roomId, { members: { [deviceId]: name } });
     toast("เชื่อมสมุดแล้ว 💑 บอกรหัสนี้ให้แฟนด้วยนะ: " + code);
   }catch(e){
     console.error(e);
@@ -679,7 +855,7 @@ daysPill.addEventListener("click", ()=>{
 $("#annivSave").addEventListener("click", async ()=>{
   const v = $("#annivInput").value;
   if(v){
-    try{ await dbApi.setSettings(pairCode, { anniv: v }); toast("บันทึกแล้ว 💞"); }
+    try{ await dbApi.setSettings(roomId, { anniv: v }); toast("บันทึกแล้ว 💞"); }
     catch(e){ toast("บันทึกไม่สำเร็จ ลองอีกทีนะ"); }
   }
   annivDialog.close();
@@ -869,7 +1045,7 @@ function renderGallery(){
     div.style.setProperty("--tilt", ((Math.random()*4)-2).toFixed(1)+"deg");
     const img = document.createElement("img");
     img.src = item.data; img.alt = "รูปวาด"; img.loading = "lazy";
-    img.addEventListener("click", ()=>openPhoto(item.id));
+    img.addEventListener("click", ()=>openPhoto("drawings", item.id));
     const meta = document.createElement("div");
     meta.className = "meta";
     const span = document.createElement("span");
@@ -882,12 +1058,12 @@ function renderGallery(){
     likeBtn.className = "like-btn" + (liked ? " liked" : "");
     likeBtn.textContent = (liked ? "❤️ " : "🤍 ") + likes.length;
     likeBtn.setAttribute("aria-label", liked ? "เลิกถูกใจ" : "ถูกใจ");
-    likeBtn.addEventListener("click", ()=>toggleLike(item));
+    likeBtn.addEventListener("click", ()=>toggleLike("drawings", item));
     const del = document.createElement("button");
     del.textContent = "🗑️"; del.setAttribute("aria-label","ลบรูป");
     del.addEventListener("click", async ()=>{
       if(!confirm("ลบรูปนี้ใช่ไหม? (หายทั้งสองเครื่องนะ)")) return;
-      try{ await dbApi.del(pairCode, "drawings", item.id); }
+      try{ await dbApi.del(roomId, "drawings", item.id); }
       catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
     });
     meta.append(span, likeBtn, del);
@@ -896,24 +1072,28 @@ function renderGallery(){
   });
 }
 
-/* ---------- ถูกใจรูป + ดูรูปขยาย ---------- */
-async function toggleLike(item){
+/* ---------- ถูกใจรูป + ดูรูปขยาย (ใช้ร่วมกันทั้งรูปวาดและรูปทริป) ---------- */
+function listFor(coll){ return coll === "tripphotos" ? tripPhotos : drawings; }
+async function toggleLike(coll, item){
   const liked = (item.likes || []).includes(myName);
-  try{ await dbApi.toggleLike(pairCode, "drawings", item.id, myName, !liked); }
+  try{ await dbApi.toggleLike(roomId, coll, item.id, myName, !liked); }
   catch(e){ toast("กดหัวใจไม่สำเร็จ ลองอีกที"); }
 }
 const photoDialog = $("#photoDialog");
-let photoId = null;
-function openPhoto(id){
-  photoId = id;
+let photoCtx = { coll: "drawings", id: null };
+function openPhoto(coll, id){
+  photoCtx = { coll, id };
   renderPhotoDialog();
   photoDialog.showModal();
 }
 function renderPhotoDialog(){
-  const item = drawings.find(x=>x.id===photoId);
+  const item = listFor(photoCtx.coll).find(x=>x.id===photoCtx.id);
   if(!item){ if(photoDialog.open) photoDialog.close(); return; }
   $("#photoBig").src = item.data;
-  $("#photoWho").textContent = (item.by ? "วาดโดย " + item.by + " · " : "") +
+  const cap = $("#photoCap");
+  if(item.caption){ cap.textContent = "📝 " + item.caption; cap.style.display = ""; }
+  else cap.style.display = "none";
+  $("#photoWho").textContent = (item.by ? "โดย " + item.by + " · " : "") +
     new Date(item.t).toLocaleDateString("th-TH",{day:"numeric",month:"long",year:"numeric"});
   const likes = item.likes || [];
   const liked = likes.includes(myName);
@@ -922,14 +1102,14 @@ function renderPhotoDialog(){
   btn.textContent = (liked ? "❤️ " : "🤍 ") + likes.length;
 }
 $("#photoLike").addEventListener("click", ()=>{
-  const item = drawings.find(x=>x.id===photoId);
-  if(item) toggleLike(item);
+  const item = listFor(photoCtx.coll).find(x=>x.id===photoCtx.id);
+  if(item) toggleLike(photoCtx.coll, item);
 });
 $("#photoDownload").addEventListener("click", ()=>{
-  const item = drawings.find(x=>x.id===photoId);
+  const item = listFor(photoCtx.coll).find(x=>x.id===photoCtx.id);
   if(!item) return;
   const a = document.createElement("a");
-  a.download = "รูปจากแกลเลอรี-" + new Date(item.t).toISOString().slice(0,10) + ".jpg";
+  a.download = "สมุดของเรา-" + new Date(item.t).toISOString().slice(0,10) + ".jpg";
   a.href = item.data;
   a.click();
 });
@@ -941,7 +1121,7 @@ photoDialog.addEventListener("click", e=>{
 $("#saveBtn").addEventListener("click", async function(){
   this.disabled = true;
   try{
-    await dbApi.add(pairCode, "drawings", { t: Date.now(), by: myName, data: exportImage() });
+    await dbApi.add(roomId, "drawings", { t: Date.now(), by: myName, data: exportImage() });
     /* ส่งสำเร็จ → ล้างผืนวาดให้พร้อมวาดรูปใหม่ (กด ↩️ ย้อนคืนได้) */
     pushUndo();
     ctx.save();
@@ -1014,10 +1194,16 @@ function renderEvents(){
     el.querySelector(".emoji").textContent = ev.emoji || "💖";
     el.querySelector(".title").textContent = ev.title;
     el.querySelector(".when").textContent = whenText + (ev.by ? " · เพิ่มโดย " + ev.by : "");
+    if(ev.detail){
+      const dt = document.createElement("div");
+      dt.className = "detail";
+      dt.textContent = "📍 " + ev.detail;
+      el.querySelector(".info").appendChild(dt);
+    }
     el.querySelector(".count").textContent = count;
     el.querySelector(".del").addEventListener("click", async ()=>{
       if(!confirm("ลบนัดนี้ใช่ไหม?")) return;
-      try{ await dbApi.del(pairCode, "events", ev.id); }
+      try{ await dbApi.del(roomId, "events", ev.id); }
       catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
     });
     list.appendChild(el);
@@ -1032,10 +1218,13 @@ $("#addEvent").addEventListener("click", async ()=>{
   try{
     const data = { t: Date.now(), title, date, emoji: $("#evEmoji").value, by: myName };
     if(dateEnd && dateEnd !== date) data.dateEnd = dateEnd;
-    await dbApi.add(pairCode, "events", data);
+    const detail = $("#evDetail").value.trim();
+    if(detail) data.detail = detail;
+    await dbApi.add(roomId, "events", data);
     $("#evTitle").value = "";
     $("#evDate").value = "";
     $("#evDateEnd").value = "";
+    $("#evDetail").value = "";
     toast("เพิ่มนัดแล้ว 📅");
   }catch(e){ toast("เพิ่มไม่สำเร็จ เช็คเน็ตนะ"); }
 });
@@ -1062,7 +1251,7 @@ function renderNotes(){
     del.textContent = "🗑️"; del.setAttribute("aria-label","ลบโน้ต");
     del.addEventListener("click", async ()=>{
       if(!confirm("ลบโน้ตนี้ใช่ไหม?")) return;
-      try{ await dbApi.del(pairCode, "notes", n.id); }
+      try{ await dbApi.del(roomId, "notes", n.id); }
       catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
     });
     meta.append(span, del);
@@ -1074,25 +1263,207 @@ $("#addNote").addEventListener("click", async ()=>{
   const text = $("#noteText").value.trim();
   if(!text){ toast("พิมพ์ข้อความก่อนน้า ✍️"); return; }
   try{
-    await dbApi.add(pairCode, "notes", { t: Date.now(), text, by: myName });
+    await dbApi.add(roomId, "notes", { t: Date.now(), text, by: myName });
     $("#noteText").value = "";
     toast("แปะโน้ตแล้ว 📌");
   }catch(e){ toast("ส่งไม่สำเร็จ เช็คเน็ตนะ"); }
 });
 
+/* ---------- Trip book ---------- */
+let trips = [], tripPhotos = [], currentTripId = null;
+const fmtShort = d => new Date(d+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"2-digit"});
+
+function renderTrips(){
+  const sorted = trips.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const list = $("#tripList");
+  list.innerHTML = "";
+  $("#tripEmpty").style.display = sorted.length ? "none" : "block";
+  sorted.forEach(tr=>{
+    const count = tripPhotos.filter(p=>p.tripId===tr.id).length;
+    const el = document.createElement("div");
+    el.className = "trip";
+    el.innerHTML = `
+      <div class="emoji"></div>
+      <div class="info"><div class="title"></div><div class="when"></div></div>
+      <div class="count"></div>
+      <button class="del" aria-label="ลบทริป">✕</button>`;
+    el.querySelector(".emoji").textContent = tr.emoji || "🧳";
+    el.querySelector(".title").textContent = tr.name;
+    el.querySelector(".when").textContent =
+      (tr.date ? fmtShort(tr.date) : "") +
+      (tr.dateEnd && tr.dateEnd !== tr.date ? " – " + fmtShort(tr.dateEnd) : "");
+    el.querySelector(".count").textContent = "📷 " + count;
+    el.addEventListener("click", ()=>openTrip(tr.id));
+    el.querySelector(".del").addEventListener("click", async e=>{
+      e.stopPropagation();
+      if(!confirm(`ลบทริป "${tr.name}" และรูปทั้งหมดในทริปใช่ไหม?`)) return;
+      try{
+        for(const p of tripPhotos.filter(p=>p.tripId===tr.id)){
+          await dbApi.del(roomId, "tripphotos", p.id);
+        }
+        await dbApi.del(roomId, "trips", tr.id);
+        if(currentTripId === tr.id) closeTrip();
+        toast("ลบทริปแล้ว");
+      }catch(err){ toast("ลบไม่สำเร็จ ลองอีกที"); }
+    });
+    list.appendChild(el);
+  });
+  /* ทริปที่เปิดอยู่ถูกลบจากอีกเครื่อง */
+  if(currentTripId && !trips.find(t=>t.id===currentTripId)) closeTrip();
+}
+$("#addTrip").addEventListener("click", async ()=>{
+  const name = $("#tripName").value.trim();
+  const date = $("#tripStart").value;
+  const dateEnd = $("#tripEnd").value;
+  if(!name){ toast("ตั้งชื่อทริปก่อนน้า 🧳"); return; }
+  if(date && dateEnd && dateEnd < date){ toast("วันกลับต้องไม่มาก่อนวันไปนะ 😅"); return; }
+  try{
+    const data = { t: Date.now(), name, emoji: $("#tripEmoji").value, by: myName };
+    if(date) data.date = date;
+    if(dateEnd && dateEnd !== date) data.dateEnd = dateEnd;
+    await dbApi.add(roomId, "trips", data);
+    $("#tripName").value = ""; $("#tripStart").value = ""; $("#tripEnd").value = "";
+    toast("สร้างทริปแล้ว 🧳 กดเข้าไปเพิ่มรูปได้เลย");
+  }catch(e){ toast("สร้างไม่สำเร็จ เช็คเน็ตนะ"); }
+});
+function openTrip(id){
+  currentTripId = id;
+  $("#tripHome").style.display = "none";
+  $("#tripView").style.display = "";
+  renderTripView();
+}
+function closeTrip(){
+  currentTripId = null;
+  $("#tripHome").style.display = "";
+  $("#tripView").style.display = "none";
+}
+$("#tripBack").addEventListener("click", closeTrip);
+function renderTripView(){
+  const tr = trips.find(t=>t.id===currentTripId);
+  if(!tr) return;
+  $("#tripTitle").textContent = (tr.emoji || "🧳") + " " + tr.name;
+  $("#tripDates").textContent =
+    (tr.date ? fmtShort(tr.date) : "") +
+    (tr.dateEnd && tr.dateEnd !== tr.date ? " – " + fmtShort(tr.dateEnd) : "");
+  const photos = tripPhotos.filter(p=>p.tripId===currentTripId);
+  const g = $("#tripGallery");
+  g.innerHTML = "";
+  $("#tripPhotosEmpty").style.display = photos.length ? "none" : "block";
+  photos.forEach(item=>{
+    const div = document.createElement("div");
+    div.className = "shot";
+    div.style.setProperty("--tilt", ((Math.random()*4)-2).toFixed(1)+"deg");
+    const img = document.createElement("img");
+    img.src = item.data; img.alt = "รูปทริป"; img.loading = "lazy";
+    img.addEventListener("click", ()=>openPhoto("tripphotos", item.id));
+    div.appendChild(img);
+    if(item.caption){
+      const cap = document.createElement("div");
+      cap.className = "cap";
+      cap.textContent = item.caption;
+      div.appendChild(cap);
+    }
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const span = document.createElement("span");
+    span.className = "who";
+    span.textContent = (item.by ? item.by + " · " : "") +
+      new Date(item.t).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    const likes = item.likes || [];
+    const liked = likes.includes(myName);
+    const likeBtn = document.createElement("button");
+    likeBtn.className = "like-btn" + (liked ? " liked" : "");
+    likeBtn.textContent = (liked ? "❤️ " : "🤍 ") + likes.length;
+    likeBtn.addEventListener("click", ()=>toggleLike("tripphotos", item));
+    const del = document.createElement("button");
+    del.textContent = "🗑️"; del.setAttribute("aria-label","ลบรูป");
+    del.addEventListener("click", async ()=>{
+      if(!confirm("ลบรูปนี้ใช่ไหม? (หายทั้งสองเครื่องนะ)")) return;
+      try{ await dbApi.del(roomId, "tripphotos", item.id); }
+      catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
+    });
+    meta.append(span, likeBtn, del);
+    div.appendChild(meta);
+    g.appendChild(div);
+  });
+}
+/* ย่อรูปถ่ายให้พอดี Firestore (~1MB/doc) */
+function compressPhoto(file){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if(Math.max(w,h) > MAX){
+        const s = MAX / Math.max(w,h);
+        w = Math.round(w*s); h = Math.round(h*s);
+      }
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const cx = c.getContext("2d");
+      cx.fillStyle = "#fff";
+      cx.fillRect(0,0,w,h);
+      cx.drawImage(img, 0, 0, w, h);
+      let q = 0.82, data = c.toDataURL("image/jpeg", q);
+      while(data.length > 800000 && q > 0.35){
+        q -= 0.1;
+        data = c.toDataURL("image/jpeg", q);
+      }
+      data.length > 900000 ? reject(new Error("too big")) : resolve(data);
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error("bad image")); };
+    img.src = url;
+  });
+}
+$("#addPhotoBtn").addEventListener("click", ()=>$("#photoFile").click());
+$("#photoFile").addEventListener("change", async function(){
+  const files = [...this.files].slice(0, 5);
+  this.value = "";
+  if(!files.length || !currentTripId) return;
+  const btn = $("#addPhotoBtn");
+  btn.disabled = true;
+  const caption = $("#tripCaption").value.trim();
+  let ok = 0;
+  for(const f of files){
+    try{
+      btn.textContent = `กำลังอัป ${ok+1}/${files.length}...`;
+      const data = await compressPhoto(f);
+      const doc = { t: Date.now(), tripId: currentTripId, data, by: myName };
+      if(caption) doc.caption = caption;
+      await dbApi.add(roomId, "tripphotos", doc);
+      ok++;
+    }catch(e){ console.error(e); }
+  }
+  $("#tripCaption").value = "";
+  btn.disabled = false;
+  btn.textContent = "📷 เพิ่มรูปถ่าย";
+  toast(ok ? `อัปรูปแล้ว ${ok} รูป 📷💕` : "อัปไม่สำเร็จ ลองรูปอื่นดูนะ");
+});
+
 /* ---------- เริ่มฟังข้อมูล ---------- */
 let unsubs = [];
-function startWatching(){
+async function startWatching(){
+  roomId = await hashCode(pairCode);
+  await migrateOldRoom();
   unsubs.forEach(u=>u());
   unsubs = [];
-  unsubs.push(dbApi.watch(pairCode, "drawings", arr => {
+  unsubs.push(dbApi.watch(roomId, "drawings", arr => {
     drawings = arr;
     renderGallery();
-    if(photoDialog.open) renderPhotoDialog();
+    if(photoDialog.open && photoCtx.coll === "drawings") renderPhotoDialog();
   }));
-  unsubs.push(dbApi.watch(pairCode, "events",   arr => { events = arr; renderEvents(); }));
-  unsubs.push(dbApi.watch(pairCode, "notes",    arr => { notes = arr; renderNotes(); }));
-  unsubs.push(dbApi.watchSettings(pairCode, s => {
+  unsubs.push(dbApi.watch(roomId, "events",   arr => { events = arr; renderEvents(); }));
+  unsubs.push(dbApi.watch(roomId, "notes",    arr => { notes = arr; renderNotes(); }));
+  unsubs.push(dbApi.watch(roomId, "trips",    arr => { trips = arr; renderTrips(); }));
+  unsubs.push(dbApi.watch(roomId, "tripphotos", arr => {
+    tripPhotos = arr;
+    renderTrips();
+    if(currentTripId) renderTripView();
+    if(photoDialog.open && photoCtx.coll === "tripphotos") renderPhotoDialog();
+  }));
+  unsubs.push(dbApi.watchSettings(roomId, s => {
     annivDate = (s && s.anniv) || "";
     renderAnniv();
   }));
@@ -1101,9 +1472,11 @@ function startWatching(){
 if(needPairing()){
   openPairing();
 }else{
-  startWatching();
-  /* ลงทะเบียนตัวเองเข้าห้อง (เผื่อเคยจับคู่ไว้ก่อนมีฟีเจอร์นี้) */
-  dbApi.setSettings(pairCode, { members: { [deviceId]: myName } }).catch(()=>{});
+  (async ()=>{
+    await startWatching();
+    /* ลงทะเบียนตัวเองเข้าห้อง (เผื่อเคยจับคู่ไว้ก่อนมีฟีเจอร์นี้) */
+    dbApi.setSettings(roomId, { members: { [deviceId]: myName } }).catch(()=>{});
+  })();
 }
 renderAnniv();
 </script>
