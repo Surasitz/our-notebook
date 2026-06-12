@@ -609,15 +609,20 @@ dialog .field{margin-bottom:.7rem}
 <div class="toast" id="toast"></div>
 
 <script type="module">
+/* ════════════════════════════════════════════════════════════════
+   firebaseConfig ถูกฉีดเข้ามาตอน deploy โดย GitHub Actions
+   (เก็บค่าจริงไว้ใน repo Secret ชื่อ FIREBASE_CONFIG)
+   ════════════════════════════════════════════════════════════════ */
+/*FIREBASE_CONFIG_START*/
 const firebaseConfig = {
-  apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
-  authDomain: "our-notebook-b9027.firebaseapp.com",
-  projectId: "our-notebook-b9027",
-  storageBucket: "our-notebook-b9027.firebasestorage.app",
-  messagingSenderId: "90949439755",
-  appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
-  measurementId: "G-EXGXSPFLPQ"
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE.appspot.com",
+  messagingSenderId: "0000000000",
+  appId: "PASTE_APP_ID"
 };
+/*FIREBASE_CONFIG_END*/
 
 const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
 /* (ทางเลือกเสริมความปลอดภัย) เปิด App Check แล้ววาง reCAPTCHA v3 site key ตรงนี้ */
