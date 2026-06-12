@@ -92,7 +92,7 @@ nav.tabs{
 nav.tabs button{
   flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:.4rem 0;border-radius:14px;color:var(--ink-soft);
-  font-size:.72rem;font-weight:500;transition:background .15s,color .15s;
+  font-size:.68rem;font-weight:500;transition:background .15s,color .15s;
 }
 nav.tabs button .ico{font-size:1.35rem;line-height:1}
 nav.tabs button.active{color:var(--berry-deep);background:#FFEDF3}
@@ -362,6 +362,49 @@ dialog .field{margin-bottom:.7rem}
   font-family:'Mali',cursive;font-size:.78rem;color:var(--ink);
   margin-top:.3rem;line-height:1.35;word-break:break-word;
 }
+
+/* ---------- แถบวันเกิด ---------- */
+.bday-bar{
+  font-family:'Mali',cursive;font-size:.82rem;font-weight:600;
+  text-align:center;padding:.45rem 1rem;
+  background:linear-gradient(90deg,#FFE3EC,#FFF3D6);
+  color:#A3375E;border-bottom:1.5px dashed var(--line);
+}
+[data-theme="dark"] .bday-bar{background:linear-gradient(90deg,#3B3050,#3D3420);color:#FF9FBC}
+
+/* ---------- โหมดวาด ---------- */
+.mode-row{display:flex;gap:.5rem;margin-bottom:.8rem}
+.mode-row .btn{flex:1;justify-content:center}
+.mode-row .btn.on{background:var(--berry);color:#fff;box-shadow:0 3px 0 var(--berry-deep);border-color:var(--berry)}
+
+/* ---------- To-do list ---------- */
+.todo{
+  display:flex;align-items:flex-start;gap:.65rem;
+  background:var(--card);border-radius:14px;box-shadow:var(--shadow);
+  padding:.7rem .85rem;margin-bottom:.6rem;
+  border-left:5px solid var(--berry);
+}
+.todo.done{opacity:.55;border-left-color:var(--mint)}
+.todo .check{
+  font-size:1.35rem;line-height:1.2;flex:0 0 auto;
+  transition:transform .12s;
+}
+.todo .check:active{transform:scale(1.2)}
+.todo .body{flex:1;min-width:0}
+.todo .text{
+  font-family:'Mali',cursive;font-size:.98rem;line-height:1.45;
+  word-break:break-word;white-space:pre-wrap;
+}
+.todo.done .text{text-decoration:line-through}
+.todo .who{font-size:.72rem;color:var(--ink-soft);margin-top:.15rem}
+.todo .del{color:var(--ink-soft);font-size:.95rem;padding:.15rem;flex:0 0 auto}
+.todo-form{display:flex;gap:.55rem}
+.todo-form input{
+  flex:1;padding:.6rem .75rem;border:1.5px solid var(--line);
+  border-radius:12px;background:#fff;outline:none;min-width:0;
+}
+.todo-form input:focus{border-color:var(--berry)}
+[data-theme="dark"] .todo-form input{background:#2D2843;color:var(--ink)}
 @media (min-width:720px){
   main{padding-bottom:2rem;padding-top:1.4rem}
   nav.tabs{
@@ -399,6 +442,7 @@ dialog .field{margin-bottom:.7rem}
   ⚠️ <b>ยังไม่ได้ตั้งค่า Firebase</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เครื่องเดียว ยังไม่ sync กับแฟน
   ให้วาง firebaseConfig ในไฟล์ index.html ตามคู่มือก่อนนะ
 </div>
+<div class="bday-bar" id="bdayBar" style="display:none"></div>
 
 <nav class="tabs" role="tablist">
   <button class="active" data-page="draw" role="tab"><span class="ico">🎨</span>วาดรูป</button>
@@ -406,6 +450,7 @@ dialog .field{margin-bottom:.7rem}
   <button data-page="trips" role="tab"><span class="ico">🧳</span>ทริป</button>
   <button data-page="schedule" role="tab"><span class="ico">📅</span>ปฏิทินคู่</button>
   <button data-page="notes" role="tab"><span class="ico">💌</span>โน้ตรัก</button>
+  <button data-page="todos" role="tab"><span class="ico">✅</span>ลิสต์</button>
 </nav>
 
 <main>
@@ -414,6 +459,10 @@ dialog .field{margin-bottom:.7rem}
   <section class="page show" id="page-draw">
     <div class="card taped">
       <h2>🎨 วาดรูปให้กัน</h2>
+      <div class="mode-row">
+        <button class="btn ghost on" id="modeSolo">🎨 วาดคนเดียว</button>
+        <button class="btn ghost" id="modeShared">💞 วาดด้วยกัน</button>
+      </div>
       <div class="canvas-wrap"><canvas id="board"></canvas><div class="eraser-cursor" id="eraserCursor"></div></div>
 
       <div class="toolbar">
@@ -555,6 +604,20 @@ dialog .field{margin-bottom:.7rem}
     <div class="empty" id="notesEmpty">ยังไม่มีโน้ตเลย~ เขียนข้อความแรกถึงเขาเลย ✍️</div>
   </section>
 
+  <!-- ============ ลิสต์ ============ -->
+  <section class="page" id="page-todos">
+    <div class="card taped">
+      <h2>✅ ลิสต์ของเราสองคน</h2>
+      <div class="todo-form">
+        <input id="todoText" placeholder="เช่น ซื้อของขวัญวันเกิดแม่ 🎁" maxlength="120">
+        <button class="btn primary" id="addTodo">เพิ่ม ➕</button>
+      </div>
+      <p class="hint" style="margin-top:.6rem">ติ๊กเสร็จแล้วจะบอกด้วยว่าใครเป็นคนทำ 💪</p>
+    </div>
+    <div id="todoList"></div>
+    <div class="empty" id="todoEmpty">ยังไม่มีอะไรในลิสต์~ เพิ่มสิ่งที่ต้องทำด้วยกันเลย ✍️</div>
+  </section>
+
 </main>
 
 <!-- Modal จับคู่ -->
@@ -571,6 +634,10 @@ dialog .field{margin-bottom:.7rem}
   <div class="field">
     <label for="myName">ชื่อเล่นของเรา (ไว้โชว์ว่าใครวาด/ใครเขียน)</label>
     <input id="myName" placeholder="เช่น มะลิ 🐰" maxlength="20">
+  </div>
+  <div class="field">
+    <label for="myBday">วันเกิดของเรา (ไว้นับถอยหลังให้กัน 🎂)</label>
+    <input id="myBday" type="date">
   </div>
   <div class="tool-row" style="margin-top:.4rem">
     <button class="btn primary" id="pairSave" style="flex:1;justify-content:center">บันทึก 💕</button>
@@ -615,12 +682,13 @@ dialog .field{margin-bottom:.7rem}
    ════════════════════════════════════════════════════════════════ */
 /*FIREBASE_CONFIG_START*/
 const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE.appspot.com",
-  messagingSenderId: "0000000000",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
+  authDomain: "our-notebook-b9027.firebaseapp.com",
+  projectId: "our-notebook-b9027",
+  storageBucket: "our-notebook-b9027.firebasestorage.app",
+  messagingSenderId: "90949439755",
+  appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
+  measurementId: "G-EXGXSPFLPQ"
 };
 /*FIREBASE_CONFIG_END*/
 
@@ -666,8 +734,8 @@ if (FIREBASE_READY) {
     mode: "firebase",
     coupleRef(code){ return fs.doc(db, "couples", code); },
     col(code, name){ return fs.collection(db, "couples", code, name); },
-    watch(code, name, cb){
-      const q = fs.query(this.col(code, name), fs.orderBy("t", "desc"), fs.limit(120));
+    watch(code, name, cb, lim = 120){
+      const q = fs.query(this.col(code, name), fs.orderBy("t", "desc"), fs.limit(lim));
       return fs.onSnapshot(q,
         snap => { cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setSync(true); },
         err => { console.error(err); setSync(false); toast("เชื่อมต่อไม่ได้ เช็ค Firestore rules นะ"); }
@@ -776,6 +844,7 @@ if (FIREBASE_READY) {
       const old = store.get("local_settings", {});
       const merged = { ...old, ...data };
       if(data.members) merged.members = { ...(old.members||{}), ...data.members };
+      if(data.birthdays) merged.birthdays = { ...(old.birthdays||{}), ...data.birthdays };
       store.set("local_settings", merged);
       (listeners.__settings||[]).forEach(cb => cb(store.get("local_settings", {})));
     },
@@ -845,6 +914,7 @@ function needPairing(){
 function openPairing(){
   $("#pairCode").value = pairCode;
   $("#myName").value = myName;
+  $("#myBday").value = store.get("myBday", "");
   $("#pairCancel").style.display = needPairing() ? "none" : "";
   pairDialog.showModal();
 }
@@ -874,9 +944,14 @@ $("#pairSave").addEventListener("click", async ()=>{
     pairCode = code; myName = name;
     store.set("pairCode", code);
     store.set("myName", name);
+    const bday = $("#myBday").value;
+    store.set("myBday", bday);
     pairDialog.close();
     await startWatching();
-    await dbApi.setSettings(roomId, { members: { [deviceId]: name } });
+    await dbApi.setSettings(roomId, {
+      members: { [deviceId]: name },
+      birthdays: { [deviceId]: bday || "" }
+    });
     toast("เชื่อมสมุดแล้ว 💑 บอกรหัสนี้ให้แฟนด้วยนะ: " + code);
   }catch(e){
     console.error(e);
@@ -974,6 +1049,7 @@ function resizeCanvas(){
   ctx.fillRect(0,0,w,h);
   ctx.lineCap = "round"; ctx.lineJoin = "round";
   if(prev) ctx.drawImage(prev, 0,0, prev.width/ratio, prev.height/ratio);
+  if(typeof sharedMode !== "undefined" && sharedMode) redrawShared();
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
@@ -991,8 +1067,10 @@ function pos(e){
 canvas.addEventListener("pointerdown", e=>{
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
-  pushUndo();
+  if(!sharedMode) pushUndo();
   drawing = true;
+  curPts = [];
+  recordPoint(e);
   const p = pos(e);
   ctx.beginPath();
   ctx.moveTo(p.x, p.y);
@@ -1001,17 +1079,99 @@ canvas.addEventListener("pointerdown", e=>{
 });
 canvas.addEventListener("pointermove", e=>{
   if(!drawing) return;
+  recordPoint(e);
   const p = pos(e);
   ctx.lineTo(p.x, p.y);
   stroke();
 });
 ["pointerup","pointercancel","pointerleave"].forEach(ev=>
-  canvas.addEventListener(ev, ()=>{ drawing = false; })
+  canvas.addEventListener(ev, ()=>{
+    if(drawing){ drawing = false; pushStroke(); }
+  })
 );
 function stroke(){
   ctx.strokeStyle = erasing ? "#ffffff" : color;
   ctx.lineWidth = erasing ? size * 2.2 : size;
   ctx.stroke();
+}
+
+/* ---------- โหมดวาดด้วยกัน (real-time) ---------- */
+var sharedMode = false;
+var strokes = [];
+var soloSnapshot = null;
+var curPts = []; /* จุดของเส้นที่กำลังลาก (normalize 0..1) */
+function cssSize(){
+  const r = canvas.getBoundingClientRect();
+  return { w: r.width || 1, h: r.height || 1 };
+}
+function recordPoint(e){
+  if(!sharedMode) return;
+  const r = canvas.getBoundingClientRect();
+  const { w, h } = cssSize();
+  curPts.push(
+    +(((e.clientX - r.left) / w)).toFixed(4),
+    +(((e.clientY - r.top) / h)).toFixed(4)
+  );
+}
+function redrawShared(){
+  const { w, h } = cssSize();
+  ctx.save();
+  ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0,0,w,h);
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  /* watch ส่งมาใหม่→เก่า วาดจากเก่าไปใหม่ */
+  strokes.slice().reverse().forEach(s=>{
+    const pts = s.pts || [];
+    if(pts.length < 4) return;
+    ctx.strokeStyle = s.c || "#43395B";
+    ctx.lineWidth = Math.max(1, (s.w || 0.01) * w);
+    ctx.beginPath();
+    ctx.moveTo(pts[0]*w, pts[1]*h);
+    for(let i=2; i<pts.length; i+=2) ctx.lineTo(pts[i]*w, pts[i+1]*h);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+async function setMode(shared){
+  if(shared === sharedMode) return;
+  sharedMode = shared;
+  $("#modeSolo").classList.toggle("on", !shared);
+  $("#modeShared").classList.toggle("on", shared);
+  if(shared){
+    soloSnapshot = canvas.toDataURL(); /* เก็บงานเดี่ยวไว้ก่อน */
+    redrawShared();
+    $("#drawHint").textContent = "โหมดวาดด้วยกัน 💞 เส้นจะขึ้นจออีกฝั่งเมื่อปล่อยนิ้ว · ↩️ ลบเส้นล่าสุดของเรา";
+    toast("เข้าโหมดวาดด้วยกันแล้ว ชวนแฟนกดโหมดนี้พร้อมกันเลย 💞");
+  }else{
+    const img = new Image();
+    img.onload = ()=>{
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      ctx.restore();
+    };
+    if(soloSnapshot) img.src = soloSnapshot;
+    else { ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore(); }
+    $("#drawHint").textContent = "รูปที่ส่งเข้าแกลเลอรี แฟนจะเห็นบนเครื่องเขาทันที 💕";
+  }
+}
+$("#modeSolo").addEventListener("click", ()=>setMode(false));
+$("#modeShared").addEventListener("click", ()=>setMode(true));
+async function pushStroke(){
+  if(!sharedMode || curPts.length < 4){ curPts = []; return; }
+  const { w } = cssSize();
+  const data = {
+    t: Date.now(),
+    by: myName,
+    c: erasing ? "#ffffff" : color,
+    w: +(((erasing ? size*2.2 : size) / w)).toFixed(4),
+    pts: curPts
+  };
+  curPts = [];
+  try{ await dbApi.add(roomId, "strokes", data); }
+  catch(e){ toast("ส่งเส้นไม่สำเร็จ เช็คเน็ตนะ"); }
 }
 /* วงแสดงขนาดยางลบ */
 const eraserCursor = $("#eraserCursor");
@@ -1046,7 +1206,14 @@ canvas.addEventListener("pointercancel", ()=>eraserCursor.classList.remove("visi
 $("#eraserBtn").addEventListener("click", function(){
   setErasing(!erasing);
 });
-$("#undoBtn").addEventListener("click", ()=>{
+$("#undoBtn").addEventListener("click", async ()=>{
+  if(sharedMode){
+    const mine = strokes.find(s=>s.by===myName); /* เรียงใหม่→เก่าอยู่แล้ว */
+    if(!mine){ toast("ยังไม่มีเส้นของเราให้ย้อนน้า"); return; }
+    try{ await dbApi.del(roomId, "strokes", mine.id); }
+    catch(e){ toast("ย้อนไม่สำเร็จ ลองอีกที"); }
+    return;
+  }
   const last = undoStack.pop();
   if(!last) return;
   const img = new Image();
@@ -1059,7 +1226,14 @@ $("#undoBtn").addEventListener("click", ()=>{
   };
   img.src = last;
 });
-$("#clearBtn").addEventListener("click", ()=>{
+$("#clearBtn").addEventListener("click", async ()=>{
+  if(sharedMode){
+    if(!confirm("ล้างกระดานวาดด้วยกัน? (หายทั้งสองเครื่องนะ)")) return;
+    try{
+      for(const s of strokes) await dbApi.del(roomId, "strokes", s.id);
+    }catch(e){ toast("ล้างไม่สำเร็จ ลองอีกที"); }
+    return;
+  }
   pushUndo();
   ctx.save();
   ctx.setTransform(1,0,0,1,0,0);
@@ -1347,6 +1521,68 @@ $("#addNote").addEventListener("click", async ()=>{
 });
 
 /* ---------- Trip book ---------- */
+/* ---------- To-do list ---------- */
+let todos = [];
+function renderTodos(){
+  const list = $("#todoList");
+  list.innerHTML = "";
+  $("#todoEmpty").style.display = todos.length ? "none" : "block";
+  /* ยังไม่เสร็จขึ้นก่อน เสร็จแล้วไปท้าย */
+  const sorted = todos.slice().sort((a,b)=>{
+    if(!!a.done !== !!b.done) return (a.done?1:0) - (b.done?1:0);
+    return b.t - a.t;
+  });
+  sorted.forEach(td=>{
+    const el = document.createElement("div");
+    el.className = "todo" + (td.done ? " done" : "");
+    const check = document.createElement("button");
+    check.className = "check";
+    check.textContent = td.done ? "✅" : "⬜";
+    check.setAttribute("aria-label", td.done ? "ยังไม่เสร็จ" : "เสร็จแล้ว");
+    check.addEventListener("click", async ()=>{
+      try{
+        await dbApi.update(roomId, "todos", td.id, {
+          done: !td.done,
+          doneBy: !td.done ? myName : ""
+        });
+        if(!td.done) toast("เสร็จไปอีกหนึ่ง เก่งมาก 🎉");
+      }catch(e){ toast("ติ๊กไม่สำเร็จ ลองอีกที"); }
+    });
+    const body = document.createElement("div");
+    body.className = "body";
+    const text = document.createElement("div");
+    text.className = "text";
+    text.textContent = td.text;
+    const who = document.createElement("div");
+    who.className = "who";
+    who.textContent = "เพิ่มโดย " + (td.by || "?") +
+      (td.done && td.doneBy ? " · ✅ ทำเสร็จโดย " + td.doneBy : "");
+    body.append(text, who);
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "🗑️";
+    del.setAttribute("aria-label","ลบรายการ");
+    del.addEventListener("click", async ()=>{
+      if(!confirm("ลบรายการนี้ใช่ไหม?")) return;
+      try{ await dbApi.del(roomId, "todos", td.id); }
+      catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
+    });
+    el.append(check, body, del);
+    list.appendChild(el);
+  });
+}
+async function addTodo(){
+  const text = $("#todoText").value.trim();
+  if(!text){ toast("พิมพ์สิ่งที่ต้องทำก่อนน้า ✍️"); return; }
+  try{
+    await dbApi.add(roomId, "todos", { t: Date.now(), text, by: myName, done: false });
+    $("#todoText").value = "";
+    toast("เพิ่มลงลิสต์แล้ว ✅");
+  }catch(e){ toast("เพิ่มไม่สำเร็จ เช็คเน็ตนะ"); }
+}
+$("#addTodo").addEventListener("click", addTodo);
+$("#todoText").addEventListener("keydown", e=>{ if(e.key==="Enter") addTodo(); });
+
 let trips = [], tripPhotos = [], currentTripId = null;
 const fmtShort = d => new Date(d+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"2-digit"});
 
@@ -1599,10 +1835,37 @@ async function startWatching(){
     if(currentTripId) renderTripView();
     if(photoDialog.open && photoCtx.coll === "tripphotos") renderPhotoDialog();
   }));
+  unsubs.push(dbApi.watch(roomId, "strokes", arr => {
+    strokes = arr;
+    if(sharedMode) redrawShared();
+  }, 500));
+  unsubs.push(dbApi.watch(roomId, "todos", arr => { todos = arr; renderTodos(); }));
   unsubs.push(dbApi.watchSettings(roomId, s => {
     annivDate = (s && s.anniv) || "";
     renderAnniv();
+    renderBday(s);
   }));
+}
+
+/* ---------- แถบนับถอยหลังวันเกิด ---------- */
+function renderBday(s){
+  const el = $("#bdayBar");
+  const members = (s && s.members) || {};
+  const bdays = (s && s.birthdays) || {};
+  const today = startOfDay(new Date());
+  let best = null;
+  for(const [dev, d] of Object.entries(bdays)){
+    if(!d) continue;
+    const [, m, day] = d.split("-").map(Number);
+    let next = new Date(today.getFullYear(), m-1, day);
+    if(next < today) next = new Date(today.getFullYear()+1, m-1, day);
+    const diff = Math.round((startOfDay(next) - today)/864e5);
+    if(!best || diff < best.diff) best = { diff, name: members[dev] || "?" };
+  }
+  if(!best){ el.style.display = "none"; return; }
+  el.style.display = "";
+  if(best.diff === 0) el.textContent = `🎉 วันนี้วันเกิด ${best.name}! สุขสันต์วันเกิดน้า 🎂💕`;
+  else el.textContent = `🎂 อีก ${best.diff} วัน จะถึงวันเกิด ${best.name} แล้วน้า`;
 }
 
 if(needPairing()){
@@ -1611,7 +1874,10 @@ if(needPairing()){
   (async ()=>{
     await startWatching();
     /* ลงทะเบียนตัวเองเข้าห้อง (เผื่อเคยจับคู่ไว้ก่อนมีฟีเจอร์นี้) */
-    dbApi.setSettings(roomId, { members: { [deviceId]: myName } }).catch(()=>{});
+    dbApi.setSettings(roomId, {
+      members: { [deviceId]: myName },
+      birthdays: { [deviceId]: store.get("myBday", "") || "" }
+    }).catch(()=>{});
   })();
 }
 renderAnniv();
