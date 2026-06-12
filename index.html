@@ -1053,6 +1053,13 @@ function renderAnniv(){
   if(nextMonth < today) nextMonth = monthlyOn(today.getFullYear(), today.getMonth()+1);
   const diffM = Math.round((startOfDay(nextMonth) - today)/864e5);
   const months = (nextMonth.getFullYear() - d0.getFullYear())*12 + (nextMonth.getMonth() - d0.getMonth());
+  /* แปลงเดือนเป็น "X ปี Y เดือน" */
+  const fmtMonths = m => {
+    const y = Math.floor(m / 12), r = m % 12;
+    if(y > 0 && r > 0) return `${y} ปี ${r} เดือน`;
+    if(y > 0) return `${y} ปี`;
+    return `${r} เดือน`;
+  };
   /* ---- แสดงผล: วันนี้ปี > วันนี้เดือน > ใกล้ปี(30วัน) > ใกล้เดือน(7วัน) ---- */
   if(diffY === 0 && years > 0){
     annivBar.style.display = "";
@@ -1060,14 +1067,14 @@ function renderAnniv(){
     celebrateAnniv(`สุขสันต์วันครบรอบ ${years} ปี! 🎂`);
   }else if(diffM === 0 && months > 0){
     annivBar.style.display = "";
-    annivBar.textContent = `🎉 วันนี้ครบรอบ ${months} เดือนของเรา! 💞`;
-    celebrateAnniv(`ครบรอบ ${months} เดือนแล้วน้า 💕`);
+    annivBar.textContent = `🎉 วันนี้ครบรอบ ${fmtMonths(months)}ของเรา! 💞`;
+    celebrateAnniv(`ครบรอบ ${fmtMonths(months)}แล้วน้า 💕`);
   }else if(diffY > 0 && diffY <= 30 && years > 0){
     annivBar.style.display = "";
     annivBar.textContent = `💞 อีก ${diffY} วัน จะครบรอบ ${years} ปีของเราแล้วน้า`;
   }else if(diffM > 0 && diffM <= 7 && months > 0){
     annivBar.style.display = "";
-    annivBar.textContent = `💞 อีก ${diffM} วัน จะครบรอบ ${months} เดือนแล้วน้า`;
+    annivBar.textContent = `💞 อีก ${diffM} วัน จะครบรอบ ${fmtMonths(months)}แล้วน้า`;
   }else{
     annivBar.style.display = "none";
   }
