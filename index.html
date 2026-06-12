@@ -248,6 +248,16 @@ dialog.photo .like-btn{font-size:1.05rem;padding:.35rem .8rem;border:1.5px solid
   box-shadow:var(--shadow);padding:.8rem .95rem;
   position:relative;transform:rotate(var(--tilt,0deg));
 }
+.note.pinned{
+  border:2px solid var(--berry);
+  box-shadow:0 4px 14px rgba(255,92,138,.25);
+}
+.note.pinned::after{
+  content:"📌";position:absolute;top:-12px;right:10px;
+  font-size:1.25rem;transform:rotate(12deg);
+}
+.note .pin-btn{font-size:.95rem;opacity:.45;padding:.1rem .2rem}
+.note.pinned .pin-btn{opacity:1}
 .note.them{background:#EAFBF8;border-radius:18px 4px 18px 18px}
 .note p{font-family:'Mali',cursive;font-size:1rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
 .note .meta{display:flex;justify-content:space-between;margin-top:.45rem;font-size:.72rem;color:var(--ink-soft)}
@@ -639,6 +649,9 @@ if (FIREBASE_READY) {
         likes: on ? fs.arrayUnion(who) : fs.arrayRemove(who)
       });
     },
+    async update(code, name, id, data){
+      await fs.updateDoc(fs.doc(db, "couples", code, name, id), data);
+    },
     watchSettings(code, cb){
       return fs.onSnapshot(this.coupleRef(code), snap => cb(snap.exists() ? snap.data() : {}));
     },
@@ -703,6 +716,15 @@ if (FIREBASE_READY) {
         const likes = new Set(item.likes || []);
         on ? likes.add(who) : likes.delete(who);
         item.likes = [...likes];
+        store.set("local_"+name, arr);
+        emit(name);
+      }
+    },
+    async update(code, name, id, data){
+      const arr = store.get("local_"+name, []);
+      const item = arr.find(x=>x.id===id);
+      if(item){
+        Object.assign(item, data);
         store.set("local_"+name, arr);
         emit(name);
       }
@@ -1235,11 +1257,16 @@ function renderNotes(){
   const list = $("#notesList");
   list.innerHTML = "";
   $("#notesEmpty").style.display = notes.length ? "none" : "block";
-  notes.forEach(n=>{
+  /* ปักหมุดขึ้นก่อน แล้วค่อยเรียงตามเวลาใหม่→เก่า */
+  const sorted = notes.slice().sort((a,b)=>{
+    if(!!b.pinned !== !!a.pinned) return (b.pinned?1:0) - (a.pinned?1:0);
+    return b.t - a.t;
+  });
+  sorted.forEach(n=>{
     const mine = n.by === myName;
     const el = document.createElement("div");
-    el.className = "note" + (mine ? "" : " them");
-    el.style.setProperty("--tilt", ((Math.random()*2.4)-1.2).toFixed(1)+"deg");
+    el.className = "note" + (mine ? "" : " them") + (n.pinned ? " pinned" : "");
+    el.style.setProperty("--tilt", n.pinned ? "0deg" : ((Math.random()*2.4)-1.2).toFixed(1)+"deg");
     const p = document.createElement("p");
     p.textContent = n.text;
     const meta = document.createElement("div");
@@ -1247,6 +1274,20 @@ function renderNotes(){
     const span = document.createElement("span");
     span.textContent = (mine ? "🐰 " : "🐻 ") + (n.by || "?") + " · " +
       new Date(n.t).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+    const btns = document.createElement("span");
+    btns.style.display = "inline-flex";
+    btns.style.gap = ".45rem";
+    const pin = document.createElement("button");
+    pin.className = "pin-btn";
+    pin.textContent = "📌";
+    pin.setAttribute("aria-label", n.pinned ? "ถอนหมุด" : "ปักหมุด");
+    pin.title = n.pinned ? "ถอนหมุด" : "ปักหมุดไว้บนสุด";
+    pin.addEventListener("click", async ()=>{
+      try{
+        await dbApi.update(roomId, "notes", n.id, { pinned: !n.pinned });
+        toast(n.pinned ? "ถอนหมุดแล้ว" : "ปักหมุดไว้บนสุดแล้ว 📌");
+      }catch(e){ toast("ปักไม่สำเร็จ ลองอีกที"); }
+    });
     const del = document.createElement("button");
     del.textContent = "🗑️"; del.setAttribute("aria-label","ลบโน้ต");
     del.addEventListener("click", async ()=>{
@@ -1254,7 +1295,8 @@ function renderNotes(){
       try{ await dbApi.del(roomId, "notes", n.id); }
       catch(e){ toast("ลบไม่สำเร็จ ลองอีกที"); }
     });
-    meta.append(span, del);
+    btns.append(pin, del);
+    meta.append(span, btns);
     el.append(p, meta);
     list.appendChild(el);
   });
