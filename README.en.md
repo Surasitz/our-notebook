@@ -58,7 +58,7 @@ Everything **syncs in real-time** between two devices via Firebase 💕
 
 - Photos are compressed to ~800KB max each to fit Firestore documents (the free 1GB quota ≈ 1,500+ photos)
 - Without a firebaseConfig, the app runs in offline mode (data stays on one device) and shows a setup banner
-
+> ⚠️ **Important:** Do not reuse the firebaseConfig that ships with this repo — always create your own Firebase project. Otherwise your data will live in someone else's database (and this repo's config is domain-locked anyway, so it won't work from another site).
 ---
 
 Built with ❤️ for someone special
