@@ -1038,30 +1038,47 @@ function renderAnniv(){
   const days = Math.floor((today - startOfDay(new Date(annivDate))) / 864e5) + 1;
   daysPill.textContent = `คบกันมา ${days.toLocaleString("th-TH")} วัน 💕`;
   daysPill.classList.remove("unset");
-  /* ครบรอบปีถัดไป */
   const d0 = new Date(annivDate + "T00:00:00");
-  let next = new Date(today.getFullYear(), d0.getMonth(), d0.getDate());
-  if(next < today) next = new Date(today.getFullYear()+1, d0.getMonth(), d0.getDate());
-  const diff = Math.round((startOfDay(next) - today)/864e5);
-  const years = next.getFullYear() - d0.getFullYear();
-  if(diff === 0 && years > 0){
+  /* ---- ครบรอบปีถัดไป ---- */
+  let nextYear = new Date(today.getFullYear(), d0.getMonth(), d0.getDate());
+  if(nextYear < today) nextYear = new Date(today.getFullYear()+1, d0.getMonth(), d0.getDate());
+  const diffY = Math.round((startOfDay(nextYear) - today)/864e5);
+  const years = nextYear.getFullYear() - d0.getFullYear();
+  /* ---- ครบรอบเดือนถัดไป (วันเดิมของทุกเดือน ถ้าเดือนนั้นไม่มีวันนั้นใช้วันสุดท้ายแทน) ---- */
+  function monthlyOn(y, m){
+    const last = new Date(y, m+1, 0).getDate();
+    return new Date(y, m, Math.min(d0.getDate(), last));
+  }
+  let nextMonth = monthlyOn(today.getFullYear(), today.getMonth());
+  if(nextMonth < today) nextMonth = monthlyOn(today.getFullYear(), today.getMonth()+1);
+  const diffM = Math.round((startOfDay(nextMonth) - today)/864e5);
+  const months = (nextMonth.getFullYear() - d0.getFullYear())*12 + (nextMonth.getMonth() - d0.getMonth());
+  /* ---- แสดงผล: วันนี้ปี > วันนี้เดือน > ใกล้ปี(30วัน) > ใกล้เดือน(7วัน) ---- */
+  if(diffY === 0 && years > 0){
     annivBar.style.display = "";
     annivBar.textContent = `🎉 วันนี้ครบรอบ ${years} ปีของเราแล้ว! 💞`;
-    celebrateAnniv(years);
-  }else if(diff > 0 && diff <= 30 && years > 0){
+    celebrateAnniv(`สุขสันต์วันครบรอบ ${years} ปี! 🎂`);
+  }else if(diffM === 0 && months > 0){
     annivBar.style.display = "";
-    annivBar.textContent = `💞 อีก ${diff} วัน จะครบรอบ ${years} ปีของเราแล้วน้า`;
+    annivBar.textContent = `🎉 วันนี้ครบรอบ ${months} เดือนของเรา! 💞`;
+    celebrateAnniv(`ครบรอบ ${months} เดือนแล้วน้า 💕`);
+  }else if(diffY > 0 && diffY <= 30 && years > 0){
+    annivBar.style.display = "";
+    annivBar.textContent = `💞 อีก ${diffY} วัน จะครบรอบ ${years} ปีของเราแล้วน้า`;
+  }else if(diffM > 0 && diffM <= 7 && months > 0){
+    annivBar.style.display = "";
+    annivBar.textContent = `💞 อีก ${diffM} วัน จะครบรอบ ${months} เดือนแล้วน้า`;
   }else{
     annivBar.style.display = "none";
   }
 }
 /* การ์ดฉลอง + หัวใจลอย โชว์วันละครั้ง */
-function celebrateAnniv(years){
+function celebrateAnniv(title){
   const key = "annivShown_" + new Date().toISOString().slice(0,10);
   if(store.get(key, false)) return;
   store.set(key, true);
   const days = Math.floor((startOfDay(new Date()) - startOfDay(new Date(annivDate))) / 864e5) + 1;
-  $("#celebrateTitle").textContent = `สุขสันต์วันครบรอบ ${years} ปี! 🎂`;
+  $("#celebrateTitle").textContent = title;
   $("#celebrateText").textContent =
     `เราเดินทางด้วยกันมา ${days.toLocaleString("th-TH")} วันแล้วนะ ` +
     `ขอบคุณที่อยู่ข้างกันเสมอ แล้วเดินไปด้วยกันต่อนานๆ เลยน้า ✨`;
