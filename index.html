@@ -314,20 +314,50 @@ dialog .field{margin-bottom:.7rem}
 .event .detail{font-size:.78rem;margin-top:.15rem;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
 
 /* ---------- Trip book ---------- */
+.trip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem}
 .trip{
-  display:flex;align-items:center;gap:.8rem;
-  background:var(--card);border-radius:14px;box-shadow:var(--shadow);
-  padding:.85rem .9rem;margin-bottom:.7rem;cursor:pointer;
-  border-left:5px solid var(--sun);
+  background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+  border:1.5px solid var(--line);
+  overflow:hidden;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;
   transition:transform .12s;
 }
-.trip:active{transform:scale(.985)}
-.trip .emoji{font-size:1.8rem}
-.trip .info{flex:1;min-width:0}
-.trip .info .title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trip .info .when{font-size:.78rem;color:var(--ink-soft)}
-.trip .count{font-family:'Mali',cursive;font-size:.8rem;color:var(--ink-soft);white-space:nowrap}
-.trip .del{color:var(--ink-soft);font-size:1rem;padding:.2rem}
+.trip:active{transform:scale(.97)}
+.trip.pinned{border:2px solid var(--berry);box-shadow:0 4px 14px rgba(255,92,138,.25)}
+.trip.pinned::after{
+  content:"📌";position:absolute;top:-10px;right:8px;
+  font-size:1.2rem;transform:rotate(12deg);z-index:2;
+}
+.trip .cover{
+  width:100%;aspect-ratio:4/3;object-fit:cover;display:block;
+  background:#FFEDF3;border-bottom:1.5px solid var(--line);
+}
+.trip .cover-emoji{
+  width:100%;aspect-ratio:4/3;display:grid;place-items:center;
+  font-size:2.8rem;border-bottom:1.5px solid var(--line);
+  background:linear-gradient(135deg,#FFE3EC,#FFF3D6);
+}
+[data-theme="dark"] .trip .cover-emoji{background:linear-gradient(135deg,#3B3050,#3D3420)}
+.trip .body{padding:.55rem .65rem .65rem;display:flex;flex-direction:column;gap:.15rem}
+.trip .title{
+  font-weight:600;font-size:.92rem;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.trip .when{font-size:.72rem;color:var(--ink-soft)}
+.trip .cap{
+  font-family:'Mali',cursive;font-size:.74rem;color:var(--ink-soft);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.trip .byline{font-family:'Mali',cursive;font-size:.7rem;color:var(--ink-soft)}
+.trip .foot{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:.3rem;gap:.3rem;
+}
+.trip .count{font-family:'Mali',cursive;font-size:.78rem;color:var(--ink-soft)}
+.trip .foot .btns{display:inline-flex;gap:.35rem}
+.trip .pin-btn{font-size:.92rem;opacity:.4;padding:.1rem}
+.trip.pinned .pin-btn{opacity:1}
+.trip .del{color:var(--ink-soft);font-size:.95rem;padding:.1rem}
 .shot .cap{
   font-family:'Mali',cursive;font-size:.78rem;color:var(--ink);
   margin-top:.3rem;line-height:1.35;word-break:break-word;
@@ -345,6 +375,7 @@ dialog .field{margin-bottom:.7rem}
   }
   nav.tabs button.active{background:var(--berry);color:#fff;border-color:var(--berry)}
   .gallery{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .trip-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   .form-grid{grid-template-columns:1.6fr 1fr 1fr .8fr auto;align-items:end}
   .form-grid .row{display:contents}
   .form-grid .row .emoji-field{grid-column:auto}
@@ -448,7 +479,7 @@ dialog .field{margin-bottom:.7rem}
           <button class="btn primary" id="addTrip" style="justify-content:center">สร้างทริป ➕</button>
         </div>
       </div>
-      <div id="tripList"></div>
+      <div id="tripList" class="trip-grid"></div>
       <div class="empty" id="tripEmpty">ยังไม่มีทริปเลย~ สร้างทริปแรกแล้วไปเก็บความทรงจำกัน 🧳</div>
     </div>
 
@@ -465,7 +496,6 @@ dialog .field{margin-bottom:.7rem}
           <button class="btn primary" id="addPhotoBtn" style="justify-content:center">📷 เพิ่มรูปถ่าย</button>
           <input type="file" id="photoFile" accept="image/*" multiple hidden>
         </div>
-        <p class="hint" style="margin-top:.5rem">รูปจะถูกย่อขนาดอัตโนมัติ เลือกได้ครั้งละไม่เกิน 5 รูป</p>
       </div>
       <div class="card">
         <div class="gallery" id="tripGallery"></div>
@@ -579,15 +609,19 @@ dialog .field{margin-bottom:.7rem}
 <div class="toast" id="toast"></div>
 
 <script type="module">
+/* ════════════════════════════════════════════════════════════════
+   ★★★ ขั้นตอนตั้งค่า: วาง firebaseConfig ของคุณตรงนี้ ★★★
+   ได้มาจาก Firebase Console → Project settings → Your apps → Web app
+   ════════════════════════════════════════════════════════════════ */
 const firebaseConfig = {
-  apiKey: "AIzaSyDOrYQFTZm0ifPQf2SeCnk0plDBiGrz1TE",
-  authDomain: "our-notebook-b9027.firebaseapp.com",
-  projectId: "our-notebook-b9027",
-  storageBucket: "our-notebook-b9027.firebasestorage.app",
-  messagingSenderId: "90949439755",
-  appId: "1:90949439755:web:2ca7df10c7e2fd33b4120e",
-  measurementId: "G-EXGXSPFLPQ"
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE.appspot.com",
+  messagingSenderId: "0000000000",
+  appId: "PASTE_APP_ID"
 };
+/* ════════════════════════════════════════════════════════════════ */
 
 const FIREBASE_READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
 /* (ทางเลือกเสริมความปลอดภัย) เปิด App Check แล้ววาง reCAPTCHA v3 site key ตรงนี้ */
@@ -1316,31 +1350,85 @@ let trips = [], tripPhotos = [], currentTripId = null;
 const fmtShort = d => new Date(d+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"2-digit"});
 
 function renderTrips(){
-  const sorted = trips.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  /* ปักหมุดขึ้นก่อน แล้วเรียงตามวันทริปล่าสุด */
+  const sorted = trips.slice().sort((a,b)=>{
+    if(!!b.pinned !== !!a.pinned) return (b.pinned?1:0) - (a.pinned?1:0);
+    return (b.date||"").localeCompare(a.date||"");
+  });
   const list = $("#tripList");
   list.innerHTML = "";
   $("#tripEmpty").style.display = sorted.length ? "none" : "block";
   sorted.forEach(tr=>{
-    const count = tripPhotos.filter(p=>p.tripId===tr.id).length;
+    const photos = tripPhotos.filter(p=>p.tripId===tr.id); /* เรียงใหม่→เก่าอยู่แล้ว */
+    const latest = photos[0];
     const el = document.createElement("div");
-    el.className = "trip";
-    el.innerHTML = `
-      <div class="emoji"></div>
-      <div class="info"><div class="title"></div><div class="when"></div></div>
-      <div class="count"></div>
-      <button class="del" aria-label="ลบทริป">✕</button>`;
-    el.querySelector(".emoji").textContent = tr.emoji || "🧳";
-    el.querySelector(".title").textContent = tr.name;
-    el.querySelector(".when").textContent =
-      (tr.date ? fmtShort(tr.date) : "") +
+    el.className = "trip" + (tr.pinned ? " pinned" : "");
+    /* รูปปก = รูปล่าสุดในทริป ถ้ายังไม่มีรูปใช้อีโมจิ */
+    if(latest){
+      const cover = document.createElement("img");
+      cover.className = "cover";
+      cover.src = latest.data;
+      cover.alt = tr.name;
+      cover.loading = "lazy";
+      el.appendChild(cover);
+    }else{
+      const cover = document.createElement("div");
+      cover.className = "cover-emoji";
+      cover.textContent = tr.emoji || "🧳";
+      el.appendChild(cover);
+    }
+    const body = document.createElement("div");
+    body.className = "body";
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = (tr.emoji || "🧳") + " " + tr.name;
+    body.appendChild(title);
+    const when = document.createElement("div");
+    when.className = "when";
+    when.textContent =
+      (tr.date ? fmtShort(tr.date) : "ยังไม่ระบุวัน") +
       (tr.dateEnd && tr.dateEnd !== tr.date ? " – " + fmtShort(tr.dateEnd) : "");
-    el.querySelector(".count").textContent = "📷 " + count;
-    el.addEventListener("click", ()=>openTrip(tr.id));
-    el.querySelector(".del").addEventListener("click", async e=>{
+    body.appendChild(when);
+    if(latest && latest.caption){
+      const cap = document.createElement("div");
+      cap.className = "cap";
+      cap.textContent = "📝 " + latest.caption;
+      body.appendChild(cap);
+    }
+    if(tr.by){
+      const by = document.createElement("div");
+      by.className = "byline";
+      by.textContent = "สร้างโดย " + tr.by;
+      body.appendChild(by);
+    }
+    const foot = document.createElement("div");
+    foot.className = "foot";
+    const count = document.createElement("span");
+    count.className = "count";
+    count.textContent = "📷 " + photos.length + " รูป";
+    const btns = document.createElement("span");
+    btns.className = "btns";
+    const pin = document.createElement("button");
+    pin.className = "pin-btn";
+    pin.textContent = "📌";
+    pin.title = tr.pinned ? "ถอนหมุด" : "ปักหมุดไว้บนสุด";
+    pin.setAttribute("aria-label", pin.title);
+    pin.addEventListener("click", async e=>{
+      e.stopPropagation();
+      try{
+        await dbApi.update(roomId, "trips", tr.id, { pinned: !tr.pinned });
+        toast(tr.pinned ? "ถอนหมุดแล้ว" : "ปักหมุดทริปแล้ว 📌");
+      }catch(err){ toast("ปักไม่สำเร็จ ลองอีกที"); }
+    });
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "🗑️";
+    del.setAttribute("aria-label","ลบทริป");
+    del.addEventListener("click", async e=>{
       e.stopPropagation();
       if(!confirm(`ลบทริป "${tr.name}" และรูปทั้งหมดในทริปใช่ไหม?`)) return;
       try{
-        for(const p of tripPhotos.filter(p=>p.tripId===tr.id)){
+        for(const p of photos){
           await dbApi.del(roomId, "tripphotos", p.id);
         }
         await dbApi.del(roomId, "trips", tr.id);
@@ -1348,6 +1436,11 @@ function renderTrips(){
         toast("ลบทริปแล้ว");
       }catch(err){ toast("ลบไม่สำเร็จ ลองอีกที"); }
     });
+    btns.append(pin, del);
+    foot.append(count, btns);
+    body.appendChild(foot);
+    el.appendChild(body);
+    el.addEventListener("click", ()=>openTrip(tr.id));
     list.appendChild(el);
   });
   /* ทริปที่เปิดอยู่ถูกลบจากอีกเครื่อง */
